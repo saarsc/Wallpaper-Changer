@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">Wallpaper Changer</string>
+    <string name="pick_image_button">Change</string>
+    <string name="Service_Label">Wallpaper changer service</string>
+    <string name="start_service">Start Service</string>
+    <string name="stop_service">Stop Service</string>
+    <string name="channel_name">Set Round Name</string>
+    <string name="channel_error">Error notifications</string>
+    <string name="search_by_artist">Artist?</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_activity_all_albums_dialog">all_albums_dialog</string>
+    <!--
+    This string is used for square devices and overridden by hello_world in
+    values-round/strings.xml for round devices.
+    -->
+    <string name="hello_world">Hello Square World!</string>
+</resources>

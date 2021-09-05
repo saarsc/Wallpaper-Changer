@@ -1,0 +1,6 @@
+services:
+  web:
+    build: .
+    ports: 
+        - "6489:5000"
+    container_name: WallpaperChanger

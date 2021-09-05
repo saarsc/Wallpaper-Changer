@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="eu.long1.spacetablayout.SpaceTabLayoutBehavior"
+    tools:context=".MainActivity">
+
+
+    <androidx.viewpager.widget.ViewPager
+        android:id="@+id/viewPager"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:background="#000"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <eu.long1.spacetablayout.SpaceTabLayout
+        android:id="@+id/spaceTabLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        app:button_color="#cb3637"
+        app:icon_one="@drawable/baseline_settings_white_24"
+        app:icon_three="@drawable/baseline_search_white_24"
+
+        app:icon_two="@drawable/baseline_storage_white_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_behavior="eu.long1.spacetablayout.SpaceTabLayoutBehavior"
+        app:layout_constraintTop_toTopOf="parent"
+        app:number_of_tabs="three_IconOnly"
+
+        app:starting_position="two"
+        app:tab_color="#696969"
+        app:text_color="#FFF" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

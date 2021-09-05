@@ -1,0 +1,9 @@
+.autogit
+venv/*
+.vscode/*
+venv
+.vscode
+creds.ini
+src/notesCache
+*.jpg
+*.png

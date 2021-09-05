@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".DatabaseFragment">
+
+    <!-- TODO: Update blank fragment layout -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+
+        <Button
+            android:id="@+id/mainActivityChangeWallpaper"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:layout_marginStart="32dp"
+            android:text="@string/pick_image_button"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.24" />
+
+        <Button
+            android:id="@+id/btnResetDB"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="32dp"
+
+            android:text="Reset DB"
+            app:layout_constraintStart_toEndOf="@+id/mainActivityChangeWallpaper"
+            app:layout_constraintTop_toTopOf="@+id/mainActivityChangeWallpaper" />
+
+        <Button
+            android:id="@+id/btnRestore"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="32dp"
+            android:text="Restore"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toEndOf="@+id/btnResetDB"
+            app:layout_constraintTop_toTopOf="@+id/btnResetDB" />
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/imageFrame"
+            android:layout_width="407dp"
+            android:layout_height="368dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btnResetDB"
+            app:layout_constraintVertical_bias="1.0"
+            tools:src="null" />
+
+        <TextView
+            android:id="@+id/tvCountData"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/white"
+            app:layout_constraintBottom_toTopOf="@+id/btnResetDB"
+            app:layout_constraintEnd_toEndOf="@+id/btnRestore"
+            app:layout_constraintStart_toStartOf="@+id/mainActivityChangeWallpaper"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+            android:id="@+id/autoAlbumName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white"
+            android:hint="Tomorrow's album"
+            app:layout_constraintBottom_toTopOf="@+id/imageFrame"
+            app:layout_constraintEnd_toEndOf="@+id/btnResetDB"
+            app:layout_constraintStart_toStartOf="@+id/btnResetDB"
+            app:layout_constraintTop_toBottomOf="@+id/btnResetDB" />
+
+        <Button
+            android:id="@+id/btnConfirm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Confrim"
+            android:textAllCaps="false"
+            app:layout_constraintBottom_toTopOf="@+id/imageFrame"
+            app:layout_constraintEnd_toEndOf="@+id/autoAlbumName"
+            app:layout_constraintStart_toStartOf="@+id/autoAlbumName"
+            app:layout_constraintTop_toBottomOf="@+id/autoAlbumName" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</FrameLayout>
