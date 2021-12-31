@@ -22,6 +22,9 @@
 	Different Pulses
 	Gold Shadow
 	The Study On Falling
+#Balthazar
+	Fever
+	Sand
 #Bon Iver
 	Bon Iver
 	For Emma, Forever Ago
@@ -47,6 +50,7 @@
 	Live 2003
 	Live 2012
 	Mylo Xyloto
+	Music Of The Spheres
 	Parachutes
 	Prospekt's March
 	Viva La Vida
@@ -60,6 +64,9 @@
 	Fading Frontier
 	Halcyon Digest
 	Why Hasnt Everything Already Disappeared
+#Dr Dog
+	Fate
+	B Room
 #El Vy
 	Return To The Moon
 #Exre
@@ -135,6 +142,7 @@
 	In Rainbows Disk 2
 	In Rainbows
 	Kid A
+	KID A MNESIA
 	OK Computer
 	OKNOTOK
 	Pablo Honey
@@ -195,5 +203,8 @@
 	Tomorrow's Modern Box
 #Two Doors Cinema Club
 	Tourist History
+#Wolf Alice
+	Visions Of Life
+	Blue Weekend
 #תמוז
 	סוף עונת התפוזים

@@ -14,6 +14,7 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.work.Constraints;
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.ExistingWorkPolicy;
+import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
@@ -108,7 +109,7 @@ public class util {
             timeDelta = c.getTimeInMillis() - System.currentTimeMillis();
         }
 
-        Constraints constraints = new Constraints.Builder().setRequiresDeviceIdle(false).setRequiresBatteryNotLow(false).setRequiresCharging(false).build();
+        Constraints constraints = new Constraints.Builder().setRequiresDeviceIdle(false).setRequiresBatteryNotLow(false).setRequiresCharging(false).setRequiredNetworkType(NetworkType.NOT_REQUIRED).build();
         OneTimeWorkRequest workRequest = new OneTimeWorkRequest.Builder(WallpaperChangeWorker.class).setInitialDelay(timeDelta,TimeUnit.MILLISECONDS).setConstraints(constraints).build();
         WorkManager.getInstance(context).enqueueUniqueWork("Wallpaper Changer",ExistingWorkPolicy.REPLACE ,workRequest);
     }

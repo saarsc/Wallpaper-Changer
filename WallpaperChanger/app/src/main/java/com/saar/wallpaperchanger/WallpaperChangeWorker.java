@@ -7,6 +7,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.work.ForegroundInfo;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
@@ -43,7 +44,7 @@ public class WallpaperChangeWorker extends Worker {
             editor.putString("next_album","");
             editor.apply();
         }
-        util.scheduleJobWorker(this.context);
+
         return Result.success();
     }
 }
