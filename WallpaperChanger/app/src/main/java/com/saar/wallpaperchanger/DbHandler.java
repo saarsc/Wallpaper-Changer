@@ -21,6 +21,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,8 +40,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DbHandler extends SQLiteOpenHelper {
+
     private static final int DATABASE_VERSION = 1;
     private static final String DATABASE_NAME = "homescreen";
+//    Main / Albums
     private static final String TABLE_NAME = "photos";
     private static final String KEY_ID = "ID";
     private static final String KEY_NAME = "NAME";
@@ -48,13 +52,18 @@ public class DbHandler extends SQLiteOpenHelper {
     private static final String KEY_USED = "USED";
     private static final String KEY_ORDER = "USED_ORDER";
     private static final String KEY_DATE = "DATE";
-
+// stats
     private static final String KEY_STATS_LAST_PLAYED = "last_played";
     private static final String KEY_STATS_OCCURRENCES = "occurrences";
     private static final String KEY_STATS_FIRST_PLAYED = "first_played";
     private static final String KEY_STATS_LAST_PLAYED_NAME = "last_played_name";
     private static final String KEY_STATS_FIRST_PLAYED_NAME = "first_played_name";
     private static final String TABLE_STATS_TABLE_NAME = "stats";
+//    Artist
+    private static final String TABLE_ARTISTS_DATA = "artist_stats";
+    private static final String KEY_TOTAL_ALBUMS = "total";
+    private static final String KEY_USED_ALBUMS = "used";
+    private static final String KEY_PERCENTAGE = "percentage";
 
 
     private static SQLiteDatabase conn;
@@ -87,7 +96,12 @@ public class DbHandler extends SQLiteOpenHelper {
     private void resetStats() {
         String CREATE_STATS = "CREATE TABLE IF NOT EXISTS " + TABLE_STATS_TABLE_NAME + " ( " + KEY_ID + " INTEGER PRIMARY KEY," +  KEY_NAME+ " TEXT, " + KEY_STATS_FIRST_PLAYED +" DATE," + KEY_STATS_LAST_PLAYED + " DATE," + KEY_STATS_FIRST_PLAYED_NAME +" TEXT," +KEY_STATS_LAST_PLAYED_NAME+" TEXT, "+ KEY_STATS_OCCURRENCES+ " INTEGER);";
         conn.execSQL(CREATE_STATS);
+    }
 
+    private void resetArtistsData() {
+        conn.execSQL("DROP TABLE IF EXISTS " + TABLE_ARTISTS_DATA);
+        String createArtist = "CREATE TABLE artist_stats AS SELECT * FROM (SELECT ARTIST, ROUND((CAST( AVAL AS FLOAT)/ CAST(TOTAL AS FLOAT)),2)  AS PERCENTAGE FROM (SELECT ARTIST, COUNT(*) TOTAL,COUNT(CASE WHEN USED=0 THEN 1 ELSE NULL END) AVAL from photos GROUP BY ARTIST));";
+        conn.execSQL(createArtist);
     }
     /**
      * _->_
@@ -145,6 +159,30 @@ public class DbHandler extends SQLiteOpenHelper {
         return resultList;
     }
 
+
+    /**
+    * Normalizing the chance of getting an artist.
+    *  available / artist total
+    * */
+    private String percentageBasedArtist(String artist) {
+        Cursor cursor = conn.rawQuery("SELECT " + KEY_ARTIST + ", " + KEY_PERCENTAGE + ",(SELECT SUM(" + KEY_PERCENTAGE + ") FROM " + TABLE_ARTISTS_DATA + " WHERE " + KEY_ARTIST +" !='" + artist + "') AS SUM FROM " + TABLE_ARTISTS_DATA + " WHERE " + KEY_ARTIST + " != '" + artist + "';", null);
+        cursor.moveToFirst();
+        if(cursor.getFloat(2) == 0) {
+            cursor = conn.rawQuery("SELECT " + KEY_ARTIST + ", " + KEY_PERCENTAGE + ",(SELECT SUM(" + KEY_PERCENTAGE + ") FROM " + TABLE_ARTISTS_DATA + ") AS SUM FROM " + TABLE_ARTISTS_DATA, null);
+            cursor.moveToFirst();
+        }
+
+        double r = BigDecimal.valueOf(Math.random() * cursor.getFloat(2)).setScale(2, RoundingMode.HALF_UP).doubleValue();
+        while (r > 0) {
+            r -= cursor.getFloat(1);
+            cursor.moveToNext();
+        }
+        cursor.moveToPrevious();
+
+        return cursor.getString(0);
+    }
+
+
     /**
      * String -> List<Photo>
      * Checks the DB for all available photos (AKA where used is set to false / 0).
@@ -157,8 +195,14 @@ public class DbHandler extends SQLiteOpenHelper {
     public List<Photo> availablePhotos(String artist, Boolean checkForStatus) {
         List<Photo> photoList = new ArrayList<>();
 
-        String selectQuery = "SELECT * FROM " + TABLE_NAME + " WHERE " + KEY_USED + " = 0";
-        Cursor cursor = conn.rawQuery(selectQuery, null);
+        String selected_artist = this.percentageBasedArtist(artist);
+        String selectQuery = "SELECT *, (SELECT COUNT(*) FROM " + TABLE_NAME + ") AS amount_left FROM " + TABLE_NAME + " WHERE ARTIST= ? AND USED = 0";
+        Cursor cursor = conn.rawQuery(selectQuery, new String[]{selected_artist});
+
+        if (!cursor.moveToFirst()) {
+            selectQuery = "SELECT * FROM " + TABLE_NAME + " WHERE " + KEY_USED + " = 0";
+            cursor = conn.rawQuery(selectQuery, null);
+        }
 
         int rowsCount = cursor.getCount();
         if (cursor.moveToFirst()) {
@@ -174,7 +218,7 @@ public class DbHandler extends SQLiteOpenHelper {
             } while (cursor.moveToNext());
         }
 
-        if (rowsCount <= 5 && checkForStatus) {
+        if (this.availableAlbumsCount() <= 5 && checkForStatus) {
 
             SharedPreferences sharedPreferences = context.getSharedPreferences("ROUND_NAME", Context.MODE_PRIVATE);
             String name = sharedPreferences.getString("name", "Round");
@@ -183,7 +227,7 @@ public class DbHandler extends SQLiteOpenHelper {
                 sendNewRoundNotification();
             }
 
-            if (rowsCount <= 0) {
+            if (this.availableAlbumsCount() <= 0) {
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putString("name", "Round");
                 editor.putString("current_round",name);
@@ -200,7 +244,6 @@ public class DbHandler extends SQLiteOpenHelper {
         cursor.close();
 
         if (photoList.size() == 0) {
-
             photoList = availablePhotos("",true);
         }
 
@@ -244,6 +287,8 @@ public class DbHandler extends SQLiteOpenHelper {
         sp = context.getSharedPreferences("ROUND_NAME",Context.MODE_PRIVATE);
         updateStats(photo.getName(), date, sp.getString("current_round","Twelfth Round (Day)"));
 
+        this.resetArtistsData();
+
         return photo;
     }
 
@@ -254,6 +299,7 @@ public class DbHandler extends SQLiteOpenHelper {
     public void resetDB() {
         onUpgrade(conn, 1, 1);
         initNewData();
+        resetArtistsData();
     }
 
     /**
@@ -284,7 +330,7 @@ public class DbHandler extends SQLiteOpenHelper {
         conn.execSQL("UPDATE " + TABLE_NAME + " SET " + KEY_ORDER + " = null");
         conn.execSQL("UPDATE " + TABLE_NAME + " SET " + KEY_DATE + " = null");
 
-        String data = util.sendRequest("restore", "",context);
+        String data = util.sendRequest("restore", "", context);
         if (!data.equals("ERROR")) {
             String[] splitData = data.split("\n");
             int i = 0;
@@ -324,6 +370,7 @@ public class DbHandler extends SQLiteOpenHelper {
             editor.putInt("num", i);
             editor.apply();
         }
+        resetArtistsData();
     }
 
     public void restoreStats(){
@@ -449,6 +496,10 @@ public class DbHandler extends SQLiteOpenHelper {
             date = name + " has yet to been played";
         }
         return date;
+    }
+
+    private int availableAlbumsCount() {
+        return conn.rawQuery("select * from " + TABLE_NAME + " where " + KEY_USED + " =0", null).getCount();
     }
 
     /**
