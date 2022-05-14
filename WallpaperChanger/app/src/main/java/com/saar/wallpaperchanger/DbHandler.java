@@ -199,7 +199,7 @@ public class DbHandler extends SQLiteOpenHelper {
         String selectQuery = "SELECT *, (SELECT COUNT(*) FROM " + TABLE_NAME + ") AS amount_left FROM " + TABLE_NAME + " WHERE ARTIST= ? AND USED = 0";
         Cursor cursor = conn.rawQuery(selectQuery, new String[]{selected_artist});
 
-        if (!cursor.moveToFirst()) {
+        if (!cursor.moveToFirst() || !checkForStatus) {
             selectQuery = "SELECT * FROM " + TABLE_NAME + " WHERE " + KEY_USED + " = 0";
             cursor = conn.rawQuery(selectQuery, null);
         }
