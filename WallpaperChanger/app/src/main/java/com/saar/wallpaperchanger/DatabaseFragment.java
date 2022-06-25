@@ -18,6 +18,11 @@ import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link DatabaseFragment#newInstance} factory method to
@@ -74,7 +79,22 @@ public class DatabaseFragment extends Fragment {
         final DbHandler dbHandler = new DbHandler(view.getContext());
 
         final TextView countInfo = view.findViewById(R.id.tvCountData);
-        String countString = dbHandler.getPlace(false) + "/" + dbHandler.getRowsCount();
+        final TextView timePeriod = view.findViewById(R.id.tvTimePeriod);
+
+        final int alreadyPlayed = dbHandler.getPlace(false);
+        final long totalAlbums = dbHandler.getRowsCount();
+
+        final String countString = alreadyPlayed + "/" + totalAlbums;
+
+        final long albumsLeft = alreadyPlayed - totalAlbums;
+
+        try {
+            final LocalDate startDate = new SimpleDateFormat("dd.MM.yy").parse(dbHandler.firstAlbumDate()).toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            timePeriod.setText(startDate.toString() + " - " + startDate.plusDays(totalAlbums).toString() + " ( " + albumsLeft * -1 + " )");
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
         countInfo.setOnClickListener(v -> {
             final Dialog dialog = new Dialog(view.getContext());
             dialog.setContentView(R.layout.all_albums_dialog);

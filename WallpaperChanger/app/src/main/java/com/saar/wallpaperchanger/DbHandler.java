@@ -523,6 +523,14 @@ public class DbHandler extends SQLiteOpenHelper {
         return albumData;
     }
 
+    public String firstAlbumDate() {
+        Cursor cursor = conn.rawQuery("SELECT " + KEY_DATE + " FROM " + TABLE_NAME + " WHERE " + KEY_ORDER + " =?", new String[]{"1"});
+        if (cursor.moveToFirst()) {
+            return  cursor.getString(0);
+        }
+
+        return "";
+    }
     public long getRowsCount() {
         return DatabaseUtils.queryNumEntries(conn, TABLE_NAME);
     }
