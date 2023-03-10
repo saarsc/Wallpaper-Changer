@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -82,6 +83,7 @@ public class SearchFragment extends Fragment {
         ArrayAdapter<String> arrayAdapterArtist = new ArrayAdapter<>(view.getContext(), android.R.layout.select_dialog_item, db.getAllArtistNames());
 
         AutoCompleteTextView searchBox = view.findViewById(R.id.searchBox);
+        CheckBox isVinyl = view.findViewById(R.id.cbIsVinyl);
         SwitchMaterial searchBy = view.findViewById(R.id.searchBySwitch);
 
         searchBox.setOnClickListener(v -> {
@@ -118,11 +120,12 @@ public class SearchFragment extends Fragment {
             if (searchBy.isChecked()) {
                 result = db.searchByArtist(val);
                 searchResult.setPaintFlags(searchResult.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
-
+                isVinyl.setVisibility(View.GONE);
             } else {
                 result = db.getAlbumDate(val);
+                isVinyl.setChecked(db.isVinyl(val));
+                isVinyl.setVisibility(View.VISIBLE);
                 searchResult.setPaintFlags(searchResult.getPaintFlags() & (~Paint.UNDERLINE_TEXT_FLAG));
-
             }
             searchResult.setText(result);
         });
@@ -138,6 +141,10 @@ public class SearchFragment extends Fragment {
                 myNames.setAdapter(adapter);
                 dialog.show();
             }
+        });
+
+        isVinyl.setOnClickListener(v -> {
+            db.setVinyl(searchBox.getText().toString(), isVinyl.isChecked());
         });
         ImageView imageFrame = view.findViewById(R.id.imageFrame);
 

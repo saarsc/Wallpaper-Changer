@@ -30,8 +30,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -90,7 +91,7 @@ public class DbHandler extends SQLiteOpenHelper {
         createTable(db);
     }
     private void createTable(@NonNull SQLiteDatabase db){
-        String CREATE_DB = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " ( " + KEY_ID + " INTEGER PRIMARY KEY," + KEY_PATH + " TEXT UNIQUE, " + KEY_NAME + " TEXT, " + KEY_ARTIST + " TEXT," + KEY_USED + " BOOLEAN, " + KEY_ORDER + " INTEGER, " + KEY_DATE + " DATE );";
+        String CREATE_DB = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " ( " + KEY_ID + " INTEGER PRIMARY KEY," + KEY_PATH + " TEXT UNIQUE, " + KEY_NAME + " TEXT, " + KEY_ARTIST + " TEXT," + KEY_USED + " BOOLEAN, " + KEY_ORDER + " INTEGER, " + KEY_DATE + " DATE, vinyl INTEGER);";
         db.execSQL(CREATE_DB);
     }
     private void resetStats() {
@@ -107,7 +108,7 @@ public class DbHandler extends SQLiteOpenHelper {
      * _->_
      * Populating the DB with all homescreen pictures
      */
-    private void initNewData() {
+    private void initNewData(HashMap<String, Integer> vinylBackup) {
 
         SharedPreferences sharedPreferences = context.getSharedPreferences("USED_ORDER", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -119,19 +120,21 @@ public class DbHandler extends SQLiteOpenHelper {
         for (String file : files) {
             ContentValues values = new ContentValues();
             String[] splitPath = file.split("/");
-            String fileName = splitPath[splitPath.length - 1];
-            String artistName = splitPath[splitPath.length - 2];
+            String fileName = splitPath[splitPath.length - 1].trim();
+            String artistName = splitPath[splitPath.length - 2].trim();
 
             if (fileName.contains(".")) {
-                fileName = fileName.split("\\.")[0];
+                fileName = fileName.split("\\.")[0].trim();
 
             }
 
             values.put(KEY_PATH, file.trim());
-            values.put(KEY_NAME, fileName.trim());
-            values.put(KEY_ARTIST, artistName.trim());
+            values.put(KEY_NAME, fileName);
+            values.put(KEY_ARTIST, artistName);
             values.put(KEY_USED, false);
-
+            if(vinylBackup.get(fileName+artistName) != null) {
+                values.put("vinyl", 1);
+            }
             try {
                 conn.insert(TABLE_NAME, null, values);
 
@@ -165,10 +168,11 @@ public class DbHandler extends SQLiteOpenHelper {
     *  available / artist total
     * */
     private String percentageBasedArtist(String artist) {
-        Cursor cursor = conn.rawQuery("SELECT " + KEY_ARTIST + ", " + KEY_PERCENTAGE + ",(SELECT SUM(" + KEY_PERCENTAGE + ") FROM " + TABLE_ARTISTS_DATA + " WHERE " + KEY_ARTIST +" !='" + artist + "') AS SUM FROM " + TABLE_ARTISTS_DATA + " WHERE " + KEY_ARTIST + " != '" + artist + "';", null);
+        Cursor cursor = conn.rawQuery("SELECT " + KEY_ARTIST + ", " + KEY_PERCENTAGE + ",(SELECT SUM(" + KEY_PERCENTAGE + ") FROM " + TABLE_ARTISTS_DATA + " WHERE " + KEY_ARTIST +" !='" + artist + "') AS SUM FROM " + TABLE_ARTISTS_DATA + " WHERE " + KEY_ARTIST + " != '" + artist + "' ORDER BY RANDOM();", null);
         cursor.moveToFirst();
+//      If there is a 0 percent sum
         if(cursor.getFloat(2) == 0) {
-            cursor = conn.rawQuery("SELECT " + KEY_ARTIST + ", " + KEY_PERCENTAGE + ",(SELECT SUM(" + KEY_PERCENTAGE + ") FROM " + TABLE_ARTISTS_DATA + ") AS SUM FROM " + TABLE_ARTISTS_DATA, null);
+            cursor = conn.rawQuery("SELECT " + KEY_ARTIST + ", " + KEY_PERCENTAGE + ",(SELECT SUM(" + KEY_PERCENTAGE + ") FROM " + TABLE_ARTISTS_DATA + ") AS SUM FROM " + TABLE_ARTISTS_DATA + " ORDER BY RANDOM();", null);
             cursor.moveToFirst();
         }
 
@@ -194,10 +198,16 @@ public class DbHandler extends SQLiteOpenHelper {
      */
     public List<Photo> availablePhotos(String artist, Boolean checkForStatus) {
         List<Photo> photoList = new ArrayList<>();
+        Cursor cursor = null;
+        if (this.shouldUseVinyl()) {
+            cursor = conn.rawQuery("SELECT * FROM PHOTOS WHERE vinyl=1 AND ARTIST !=? AND USED = 0", new String[]{artist});
+        }
 
-        String selected_artist = this.percentageBasedArtist(artist);
         String selectQuery = "SELECT *, (SELECT COUNT(*) FROM " + TABLE_NAME + ") AS amount_left FROM " + TABLE_NAME + " WHERE ARTIST= ? AND USED = 0";
-        Cursor cursor = conn.rawQuery(selectQuery, new String[]{selected_artist});
+        if(cursor == null || cursor.getCount() == 0) {
+            String selected_artist = this.percentageBasedArtist(artist);
+            cursor = conn.rawQuery(selectQuery, new String[]{selected_artist});
+        }
 
         if (!cursor.moveToFirst() || !checkForStatus) {
             selectQuery = "SELECT * FROM " + TABLE_NAME + " WHERE " + KEY_USED + " = 0";
@@ -250,6 +260,33 @@ public class DbHandler extends SQLiteOpenHelper {
         return photoList;
     }
 
+    boolean shouldUseVinyl() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, 1);
+        int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+        return (dayOfWeek == Calendar.FRIDAY || dayOfWeek == Calendar.SATURDAY);
+    }
+    public List<String> availableArtistsWithPercentage() {
+        List<String> stats = new ArrayList<>();
+        String selectQuery = "SELECT * FROM " + TABLE_ARTISTS_DATA + " ORDER BY PERCENTAGE DESC";
+        Cursor cursor = conn.rawQuery(selectQuery, new String[]{});
+
+        if(cursor.moveToFirst()) {
+            do {
+                try {
+                    Float stat = cursor.getFloat(1);
+                    String name = cursor.getString(0);
+                    stats.add(name + " - " + stat);
+                } catch (Exception e) {
+                    Log.d("VAL", String.valueOf(cursor.getType(1)));
+                }
+
+
+            } while (cursor.moveToNext());
+        }
+        return stats;
+    }
+
     /**
      * _->Photo
      * Handles everything that involves interacting with the DB. picks the new image and returns it to service method
@@ -285,7 +322,7 @@ public class DbHandler extends SQLiteOpenHelper {
         conn.update(TABLE_NAME, values, KEY_PATH + " =?", new String[]{photo.getPath()});
 
         sp = context.getSharedPreferences("ROUND_NAME",Context.MODE_PRIVATE);
-        updateStats(photo.getName(), date, sp.getString("current_round","Twelfth Round (Day)"));
+//        updateStats(photo.getName(), date, sp.getString("current_round","Twelfth Round (Day)"));
 
         this.resetArtistsData();
 
@@ -297,9 +334,24 @@ public class DbHandler extends SQLiteOpenHelper {
      * Resetting the DB and initialize it
      */
     public void resetDB() {
+        HashMap<String, Integer> vinylBackup = this.getVinyl();
         onUpgrade(conn, 1, 1);
-        initNewData();
+        initNewData(vinylBackup);
         resetArtistsData();
+    }
+
+    private HashMap<String, Integer> getVinyl() {
+        String query = "SELECT * FROM photos WHERE vinyl = 1";
+        Cursor cursor = conn.rawQuery(query, null);
+        HashMap<String, Integer> data = new HashMap<>();
+        if(cursor.moveToFirst()) {
+            do {
+                String name = cursor.getString(cursor.getColumnIndex(KEY_NAME));
+                String artist = cursor.getString(cursor.getColumnIndex(KEY_ARTIST));
+                data.put(name + artist, cursor.getInt(cursor.getColumnIndex("vinyl")));
+            } while (cursor.moveToNext());
+        }
+        return data;
     }
 
     /**
@@ -397,7 +449,7 @@ public class DbHandler extends SQLiteOpenHelper {
 
                         String name = withoutNumber[0].trim();
                         String date = withoutNumber[1];
-                        updateStats(name,date,key);
+//                        updateStats(name,date,key);
                     }
                 }
             }
@@ -496,6 +548,34 @@ public class DbHandler extends SQLiteOpenHelper {
             date = name + " has yet to been played";
         }
         return date;
+    }
+
+    /**
+     * Given an album name returns the date that it was played
+     *
+     * @param name the album name to search
+     * @return if the album is marked as vinyl or not
+     */
+    public boolean isVinyl(String name) {
+        Cursor cursor = conn.rawQuery("select vinyl from photos where NAME =?", new String[]{name});
+
+        if (cursor.moveToFirst()) {
+            return cursor.getInt(0) == 1;
+        }
+        cursor.close();
+        return false;
+    }
+
+    /**
+     * Given an album name returns the date that it was played
+     *
+     * @param name the album name to search
+     * @return if the album is marked as vinyl or not
+     */
+    public void setVinyl(String name, boolean isVinyl) {
+        ContentValues values = new ContentValues();
+        values.put("vinyl", isVinyl);
+        conn.update(TABLE_NAME, values, KEY_NAME + " =?", new String[]{name});
     }
 
     private int availableAlbumsCount() {

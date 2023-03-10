@@ -99,6 +99,16 @@
             app:layout_constraintStart_toStartOf="@+id/mainActivityChangeWallpaper"
             app:layout_constraintTop_toBottomOf="@+id/tvCountData"
             app:layout_constraintVertical_bias="0.259" />
+
+        <Switch
+            android:id="@+id/switchSeeArtist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="48dp"
+            android:minHeight="48dp"
+            android:text="Artist"
+            app:layout_constraintStart_toEndOf="@+id/tvCountData"
+            tools:layout_editor_absoluteY="58dp" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </FrameLayout>

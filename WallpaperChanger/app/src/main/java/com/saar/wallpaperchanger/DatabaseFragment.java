@@ -12,6 +12,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
@@ -81,6 +82,8 @@ public class DatabaseFragment extends Fragment {
         final TextView countInfo = view.findViewById(R.id.tvCountData);
         final TextView timePeriod = view.findViewById(R.id.tvTimePeriod);
 
+        final Switch showArtistStats = view.findViewById(R.id.switchSeeArtist);
+
         final int alreadyPlayed = dbHandler.getPlace(false);
         final long totalAlbums = dbHandler.getRowsCount();
 
@@ -90,7 +93,7 @@ public class DatabaseFragment extends Fragment {
 
         try {
             final LocalDate startDate = new SimpleDateFormat("dd.MM.yy").parse(dbHandler.firstAlbumDate()).toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-            timePeriod.setText(startDate.toString() + " - " + startDate.plusDays(totalAlbums).toString() + " ( " + albumsLeft * -1 + " )");
+            timePeriod.setText(startDate.toString() + " - " + startDate.plusDays(totalAlbums).toString() + " ( " + albumsLeft * - 1 + " )");
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -98,10 +101,16 @@ public class DatabaseFragment extends Fragment {
         countInfo.setOnClickListener(v -> {
             final Dialog dialog = new Dialog(view.getContext());
             dialog.setContentView(R.layout.all_albums_dialog);
-            dialog.setTitle("Albums...");
             ListView myNames = (ListView) dialog.findViewById(R.id.List);
+            ArrayAdapter adapter;
+            if (showArtistStats.isChecked()){
+                dialog.setTitle("Artist...");
+                 adapter = new ArrayAdapter(view.getContext(), android.R.layout.simple_list_item_1, android.R.id.text1, dbHandler.availableArtistsWithPercentage());
+            } else {
+                dialog.setTitle("Albums...");
+                adapter = new ArrayAdapter<Photo>(view.getContext(), android.R.layout.simple_list_item_1, android.R.id.text1, dbHandler.availablePhotos("",false));
+            }
 
-            ArrayAdapter<Photo> adapter = new ArrayAdapter(view.getContext(), android.R.layout.simple_list_item_1, android.R.id.text1, dbHandler.availablePhotos("",false));
             myNames.setAdapter(adapter);
             dialog.show();
         });
