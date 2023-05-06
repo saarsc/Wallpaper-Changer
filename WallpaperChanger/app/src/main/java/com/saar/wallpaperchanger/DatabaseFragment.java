@@ -1,7 +1,9 @@
 package com.saar.wallpaperchanger;
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -83,6 +85,7 @@ public class DatabaseFragment extends Fragment {
         final TextView timePeriod = view.findViewById(R.id.tvTimePeriod);
 
         final Switch showArtistStats = view.findViewById(R.id.switchSeeArtist);
+        final Switch vinylOnWeekend = view.findViewById(R.id.switchUseVinylOnWeekend);
 
         final int alreadyPlayed = dbHandler.getPlace(false);
         final long totalAlbums = dbHandler.getRowsCount();
@@ -131,6 +134,8 @@ public class DatabaseFragment extends Fragment {
 
         });
 
+        SharedPreferences useVinylOnWeekends = view.getContext().getSharedPreferences("vinylWeekend", Context.MODE_PRIVATE);
+        vinylOnWeekend.setChecked(useVinylOnWeekends.getBoolean("shouldUseVinyl", true));
 
         countInfo.setText(countString);
 
@@ -147,6 +152,9 @@ public class DatabaseFragment extends Fragment {
             editor.apply();
         });
 
+        vinylOnWeekend.setOnClickListener(v -> {
+            useVinylOnWeekends.edit().putBoolean("shouldUseVinyl", !useVinylOnWeekends.getBoolean("shouldUseVinyl", true)).apply();
+        });
         ImageView imageFrame = view.findViewById(R.id.imageFrame);
 
         SharedPreferences sp = view.getContext().getSharedPreferences("currentAlbum", Context.MODE_PRIVATE);
@@ -155,6 +163,35 @@ public class DatabaseFragment extends Fragment {
         if (!photoPath.equals("")) {
             Glide.with(view.getContext()).asBitmap().load(photoPath).fitCenter().into(imageFrame);
         }
+
+        Button export = view.findViewById(R.id.export_table);
+        export.setOnClickListener( v -> {
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("text/csv");
+            intent.putExtra(Intent.EXTRA_TITLE, "photos.csv");
+            startActivityForResult(intent,1);
+        });
+
+        Button importData = view.findViewById(R.id.import_table);
+        importData.setOnClickListener( v -> {
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.setType("*/*");
+
+            startActivityForResult(intent, 2);
+        });
         return view;
     }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == Activity.RESULT_OK) {
+            if (requestCode == 1) {
+                util.exportData(getActivity(), data.getData());
+            } else if (requestCode == 2) {
+                util.importDat(getActivity(), data.getData());
+            }
+        }
+    }
+
 }

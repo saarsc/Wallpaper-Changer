@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -91,7 +92,7 @@ public class DbHandler extends SQLiteOpenHelper {
         createTable(db);
     }
     private void createTable(@NonNull SQLiteDatabase db){
-        String CREATE_DB = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " ( " + KEY_ID + " INTEGER PRIMARY KEY," + KEY_PATH + " TEXT UNIQUE, " + KEY_NAME + " TEXT, " + KEY_ARTIST + " TEXT," + KEY_USED + " BOOLEAN, " + KEY_ORDER + " INTEGER, " + KEY_DATE + " DATE, vinyl INTEGER);";
+        String CREATE_DB = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " ( " + KEY_ID + " INTEGER PRIMARY KEY," + KEY_PATH + " TEXT UNIQUE, " + KEY_NAME + " TEXT, " + KEY_ARTIST + " TEXT," + KEY_USED + " BOOLEAN DEFAULT 0, " + KEY_ORDER + " INTEGER, " + KEY_DATE + " DATE, vinyl BOOLEAN DEFAULT 0, only_weekend BOOLEAN DEFAULT 0);";
         db.execSQL(CREATE_DB);
     }
     private void resetStats() {
@@ -99,16 +100,20 @@ public class DbHandler extends SQLiteOpenHelper {
         conn.execSQL(CREATE_STATS);
     }
 
-    private void resetArtistsData() {
+    public void resetArtistsData() {
         conn.execSQL("DROP TABLE IF EXISTS " + TABLE_ARTISTS_DATA);
-        String createArtist = "CREATE TABLE artist_stats AS SELECT * FROM (SELECT ARTIST, ROUND((CAST( AVAL AS FLOAT)/ CAST(TOTAL AS FLOAT)),2)  AS PERCENTAGE FROM (SELECT ARTIST, COUNT(*) TOTAL,COUNT(CASE WHEN USED=0 THEN 1 ELSE NULL END) AVAL from photos GROUP BY ARTIST));";
+        String createArtist = "CREATE TABLE artist_stats AS " +
+            "SELECT ARTIST, " +
+                "IFNULL(ROUND(COUNT(CASE WHEN USED = 0 AND only_weekend != 1 THEN 1 END) * 1.0 / COUNT(CASE WHEN only_weekend != 1 THEN 1 END), 2), 0) AS PERCENTAGE, " +
+                "IFNULL(ROUND(COUNT(CASE WHEN USED = 0 AND (VINYL = 1 OR only_weekend = 1) THEN 1 END) * 1.0 / COUNT(CASE WHEN VINYL = 1 OR only_weekend = 1 THEN 1 END), 2), 0) " +
+                "AS VINYL_PERCENTAGE, COUNT(*) AS TOTAL FROM photos GROUP BY ARTIST";
         conn.execSQL(createArtist);
     }
     /**
      * _->_
      * Populating the DB with all homescreen pictures
      */
-    private void initNewData(HashMap<String, Integer> vinylBackup) {
+    private void initNewData(HashMap<String, List<Integer>> vinylBackup) {
 
         SharedPreferences sharedPreferences = context.getSharedPreferences("USED_ORDER", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -134,6 +139,7 @@ public class DbHandler extends SQLiteOpenHelper {
             values.put(KEY_USED, false);
             if(vinylBackup.get(fileName+artistName) != null) {
                 values.put("vinyl", 1);
+                values.put("only_weekend", vinylBackup.get(fileName + artistName).get(1));
             }
             try {
                 conn.insert(TABLE_NAME, null, values);
@@ -168,24 +174,46 @@ public class DbHandler extends SQLiteOpenHelper {
     *  available / artist total
     * */
     private String percentageBasedArtist(String artist) {
-        Cursor cursor = conn.rawQuery("SELECT " + KEY_ARTIST + ", " + KEY_PERCENTAGE + ",(SELECT SUM(" + KEY_PERCENTAGE + ") FROM " + TABLE_ARTISTS_DATA + " WHERE " + KEY_ARTIST +" !='" + artist + "') AS SUM FROM " + TABLE_ARTISTS_DATA + " WHERE " + KEY_ARTIST + " != '" + artist + "' ORDER BY RANDOM();", null);
-        cursor.moveToFirst();
-//      If there is a 0 percent sum
-        if(cursor.getFloat(2) == 0) {
-            cursor = conn.rawQuery("SELECT " + KEY_ARTIST + ", " + KEY_PERCENTAGE + ",(SELECT SUM(" + KEY_PERCENTAGE + ") FROM " + TABLE_ARTISTS_DATA + ") AS SUM FROM " + TABLE_ARTISTS_DATA + " ORDER BY RANDOM();", null);
-            cursor.moveToFirst();
+        String relevantColumn = KEY_PERCENTAGE;
+        if (this.shouldUseVinyl()) {
+            relevantColumn = "VINYL_PERCENTAGE";
+        }
+        Cursor cursor = this.getPercentBasedCursor(relevantColumn, artist);
+        boolean noResults = cursor.getCount() == 0;
+
+        if (this.shouldUseVinyl() && noResults) {
+            cursor = this.getPercentBasedCursor(KEY_PERCENTAGE, artist);
+            noResults = cursor.getCount() == 0;
         }
 
-        double r = BigDecimal.valueOf(Math.random() * cursor.getFloat(2)).setScale(2, RoundingMode.HALF_UP).doubleValue();
-        while (r > 0) {
-            r -= cursor.getFloat(1);
-            cursor.moveToNext();
+//      If there is a 0 percent sum
+        if(noResults) {
+            cursor = this.getPercentBasedCursor(KEY_PERCENTAGE, "");
         }
-        cursor.moveToPrevious();
+        cursor.moveToFirst();
+
+//        double r = BigDecimal.valueOf(Math.random() * cursor.getFloat(2)).setScale(2, RoundingMode.HALF_UP).doubleValue();
+//        while (r > 0) {
+//            r -= cursor.getFloat(1);
+//            cursor.moveToNext();
+//        }
+//        cursor.moveToPrevious();
 
         return cursor.getString(0);
     }
 
+    private Cursor getPercentBasedCursor(String column, String artist) {
+        String query = "SELECT ARTIST FROM ARTIST_STATS WHERE " + column + " > 0 ";
+        String[] args = null;
+        if (!artist.isEmpty()) {
+            query += "AND ARTIST != ? ";
+            args = new String[]{artist};
+        }
+
+        query += "ORDER BY RANDOM() * " + column + " LIMIT 1";
+//        return conn.rawQuery("SELECT " + KEY_ARTIST + ", " + column + ",(SELECT SUM(" + column + ") FROM " + TABLE_ARTISTS_DATA + " WHERE " + KEY_ARTIST +" !='" + artist + "') AS SUM FROM " + TABLE_ARTISTS_DATA + " WHERE " + KEY_ARTIST + " != '" + artist + "' ORDER BY RANDOM();", null);
+        return conn.rawQuery(query, args);
+    }
 
     /**
      * String -> List<Photo>
@@ -198,23 +226,22 @@ public class DbHandler extends SQLiteOpenHelper {
      */
     public List<Photo> availablePhotos(String artist, Boolean checkForStatus) {
         List<Photo> photoList = new ArrayList<>();
-        Cursor cursor = null;
-        if (this.shouldUseVinyl()) {
-            cursor = conn.rawQuery("SELECT * FROM PHOTOS WHERE vinyl=1 AND ARTIST !=? AND USED = 0", new String[]{artist});
-        }
 
         String selectQuery = "SELECT *, (SELECT COUNT(*) FROM " + TABLE_NAME + ") AS amount_left FROM " + TABLE_NAME + " WHERE ARTIST= ? AND USED = 0";
-        if(cursor == null || cursor.getCount() == 0) {
-            String selected_artist = this.percentageBasedArtist(artist);
-            cursor = conn.rawQuery(selectQuery, new String[]{selected_artist});
+        if (this.shouldUseVinyl()) {
+            selectQuery += " AND vinyl = 1";
+        } else {
+            selectQuery += " AND only_weekend != 1";
         }
+
+        String selected_artist = this.percentageBasedArtist(artist);
+        Cursor cursor = conn.rawQuery(selectQuery, new String[]{selected_artist});
 
         if (!cursor.moveToFirst() || !checkForStatus) {
             selectQuery = "SELECT * FROM " + TABLE_NAME + " WHERE " + KEY_USED + " = 0";
             cursor = conn.rawQuery(selectQuery, null);
         }
 
-        int rowsCount = cursor.getCount();
         if (cursor.moveToFirst()) {
             do {
                 String path = cursor.getString(1);
@@ -264,7 +291,8 @@ public class DbHandler extends SQLiteOpenHelper {
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.DAY_OF_YEAR, 1);
         int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-        return (dayOfWeek == Calendar.FRIDAY || dayOfWeek == Calendar.SATURDAY);
+        SharedPreferences sp = context.getSharedPreferences("vinylWeekend", Context.MODE_PRIVATE);
+        return (dayOfWeek == Calendar.FRIDAY || dayOfWeek == Calendar.SATURDAY) && sp.getBoolean("shouldUseVinyl", true);
     }
     public List<String> availableArtistsWithPercentage() {
         List<String> stats = new ArrayList<>();
@@ -334,21 +362,23 @@ public class DbHandler extends SQLiteOpenHelper {
      * Resetting the DB and initialize it
      */
     public void resetDB() {
-        HashMap<String, Integer> vinylBackup = this.getVinyl();
+        HashMap<String, List<Integer>> vinylBackup = this.getVinyl();
         onUpgrade(conn, 1, 1);
         initNewData(vinylBackup);
         resetArtistsData();
     }
 
-    private HashMap<String, Integer> getVinyl() {
+    private HashMap<String, List<Integer>> getVinyl() {
         String query = "SELECT * FROM photos WHERE vinyl = 1";
         Cursor cursor = conn.rawQuery(query, null);
-        HashMap<String, Integer> data = new HashMap<>();
+        HashMap<String, List<Integer>> data = new HashMap<>();
         if(cursor.moveToFirst()) {
             do {
                 String name = cursor.getString(cursor.getColumnIndex(KEY_NAME));
                 String artist = cursor.getString(cursor.getColumnIndex(KEY_ARTIST));
-                data.put(name + artist, cursor.getInt(cursor.getColumnIndex("vinyl")));
+
+                List<Integer> vinylData = Arrays.asList(1, cursor.getInt(cursor.getColumnIndex("only_weekend")));
+                data.put(name + artist, vinylData);
             } while (cursor.moveToNext());
         }
         return data;
@@ -566,15 +596,29 @@ public class DbHandler extends SQLiteOpenHelper {
         return false;
     }
 
+    public boolean isOnlyWeekend(String name) {
+        Cursor cursor = conn.rawQuery("select only_weekend from photos where NAME =?", new String[]{name});
+
+        if (cursor.moveToFirst()) {
+            return cursor.getInt(0) == 1;
+        }
+        cursor.close();
+        return false;
+    }
+
     /**
      * Given an album name returns the date that it was played
      *
      * @param name the album name to search
      * @return if the album is marked as vinyl or not
      */
-    public void setVinyl(String name, boolean isVinyl) {
+    public void setVinyl(String name, boolean... options) {
+        boolean isVinyl = options[0];
         ContentValues values = new ContentValues();
         values.put("vinyl", isVinyl);
+        if (options.length > 1) {
+            values.put("only_weekend", options[1]);
+        }
         conn.update(TABLE_NAME, values, KEY_NAME + " =?", new String[]{name});
     }
 

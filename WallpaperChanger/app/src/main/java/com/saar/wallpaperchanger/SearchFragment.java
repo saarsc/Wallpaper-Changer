@@ -84,6 +84,7 @@ public class SearchFragment extends Fragment {
 
         AutoCompleteTextView searchBox = view.findViewById(R.id.searchBox);
         CheckBox isVinyl = view.findViewById(R.id.cbIsVinyl);
+        CheckBox isWeekend = view.findViewById(R.id.cbWeekend);
         SwitchMaterial searchBy = view.findViewById(R.id.searchBySwitch);
 
         searchBox.setOnClickListener(v -> {
@@ -121,10 +122,14 @@ public class SearchFragment extends Fragment {
                 result = db.searchByArtist(val);
                 searchResult.setPaintFlags(searchResult.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
                 isVinyl.setVisibility(View.GONE);
+                isWeekend.setVisibility(View.GONE);
             } else {
                 result = db.getAlbumDate(val);
                 isVinyl.setChecked(db.isVinyl(val));
+                isWeekend.setChecked(db.isOnlyWeekend(val));
+
                 isVinyl.setVisibility(View.VISIBLE);
+                isWeekend.setVisibility(View.VISIBLE);
                 searchResult.setPaintFlags(searchResult.getPaintFlags() & (~Paint.UNDERLINE_TEXT_FLAG));
             }
             searchResult.setText(result);
@@ -145,6 +150,10 @@ public class SearchFragment extends Fragment {
 
         isVinyl.setOnClickListener(v -> {
             db.setVinyl(searchBox.getText().toString(), isVinyl.isChecked());
+        });
+        isWeekend.setOnClickListener(v -> {
+            db.setVinyl(searchBox.getText().toString(), isWeekend.isChecked(), isWeekend.isChecked());
+            isVinyl.setChecked(isWeekend.isChecked());
         });
         ImageView imageFrame = view.findViewById(R.id.imageFrame);
 

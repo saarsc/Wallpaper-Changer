@@ -80,11 +80,25 @@
             android:id="@+id/cbIsVinyl"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="48dp"
             android:text="Vinyl"
             android:textColor="@android:color/white"
             android:visibility="gone"
             app:layout_constraintStart_toStartOf="@+id/searchResult"
-            app:layout_constraintTop_toBottomOf="@+id/searchResult" />
+            app:layout_constraintTop_toTopOf="@+id/searchResult" />
+
+        <CheckBox
+            android:id="@+id/cbWeekend"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Weekend"
+            android:textColor="@android:color/white"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="@+id/cbIsVinyl"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="@+id/cbIsVinyl"
+            app:layout_constraintTop_toBottomOf="@+id/cbIsVinyl" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </FrameLayout>

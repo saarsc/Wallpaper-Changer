@@ -107,8 +107,36 @@
             android:layout_marginStart="48dp"
             android:minHeight="48dp"
             android:text="Artist"
+            android:textColor="@android:color/white"
             app:layout_constraintStart_toEndOf="@+id/tvCountData"
             tools:layout_editor_absoluteY="58dp" />
+
+        <Switch
+            android:id="@+id/switchUseVinylOnWeekend"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="84dp"
+            android:minHeight="48dp"
+            android:text="Vinyl Weekend"
+            android:textColor="@android:color/white"
+            app:layout_constraintEnd_toStartOf="@+id/tvCountData"
+            tools:layout_editor_absoluteY="58dp" />
+
+        <Button
+            android:id="@+id/export_table"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Export"
+            app:layout_constraintStart_toStartOf="@+id/mainActivityChangeWallpaper"
+            app:layout_constraintTop_toBottomOf="@+id/mainActivityChangeWallpaper" />
+
+        <Button
+            android:id="@+id/import_table"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Import"
+            app:layout_constraintStart_toStartOf="@+id/export_table"
+            app:layout_constraintTop_toBottomOf="@+id/export_table" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </FrameLayout>

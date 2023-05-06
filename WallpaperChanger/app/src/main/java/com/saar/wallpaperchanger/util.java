@@ -1,13 +1,22 @@
 package com.saar.wallpaperchanger;
 
+import static androidx.core.app.ActivityCompat.startActivityForResult;
+
+import android.app.Activity;
 import android.app.WallpaperManager;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
 import android.content.ComponentName;
+import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -27,8 +36,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -47,7 +61,6 @@ import java.util.concurrent.TimeUnit;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class util {
-
     /**
      * Handles all of the service code.:
      * Timing the next run to 22:00 the next day
@@ -113,6 +126,76 @@ public class util {
         OneTimeWorkRequest workRequest = new OneTimeWorkRequest.Builder(WallpaperChangeWorker.class).setInitialDelay(timeDelta,TimeUnit.MILLISECONDS).setConstraints(constraints).build();
         WorkManager.getInstance(context).enqueueUniqueWork("Wallpaper Changer",ExistingWorkPolicy.REPLACE ,workRequest);
     }
+
+    public static void exportData(Activity activity, Uri uri) {
+        try {
+            OutputStream outputStream = activity.getContentResolver().openOutputStream(uri);
+            CSVWriter writer = new CSVWriter(new OutputStreamWriter(outputStream), '|', '"', "\n");
+
+            // Query the database to get the data to export
+            SQLiteDatabase db = new DbHandler(activity.getApplicationContext()).getReadableDatabase();
+            Cursor cursor = db.rawQuery("SELECT * FROM photos", null);
+
+            // Write the column names to the CSV file
+            writer.writeNext(cursor.getColumnNames());
+
+            // Write the data to the CSV file
+            while (cursor.moveToNext()) {
+                String[] row = new String[cursor.getColumnCount()];
+                for (int i = 0; i < cursor.getColumnCount(); i++) {
+                    row[i] = cursor.getString(i);
+                }
+                writer.writeNext(row);
+            }
+
+            // Close the CSV writer and the database cursor
+            writer.close();
+            cursor.close();
+
+            // Show a toast message indicating that the data was exported
+            Toast.makeText(activity, "Data exported to " + uri.toString(), Toast.LENGTH_SHORT).show();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(activity, "Error exporting data", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public static void importDat(Activity activity, Uri uri) {
+        try {
+            InputStream inputStream = activity.getContentResolver().openInputStream(uri);
+            CSVReader reader = new CSVReader(new InputStreamReader(inputStream), "|");
+
+            // Delete all existing data from the table
+            DbHandler dbHandler = new DbHandler(activity.getApplicationContext());
+            SQLiteDatabase db = dbHandler.getReadableDatabase();
+            dbHandler.onUpgrade(db, 1, 1);
+
+            // Read the data from the CSV file and insert it into the table
+            String[] row;
+            while ((row = reader.readNext()) != null) {
+                ContentValues values = new ContentValues();
+                for (int i = 0; i < row.length; i++) {
+                    values.put(reader.getHeader()[i], row[i]);
+                }
+                db.insert("photos", null, values);
+            }
+
+            // Close the CSV reader and the database
+            reader.close();
+            db.close();
+
+            dbHandler.resetArtistsData();
+
+            // Show a toast message indicating that the data was imported
+            Toast.makeText(activity, "Data imported from " + uri.toString(), Toast.LENGTH_SHORT).show();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(activity, "Error importing data", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     /**
      * Changes the wallpaper
      *
@@ -131,7 +214,7 @@ public class util {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yy");
         String line = place + ") " + photo.getName() + " - " + LocalDateTime.from(dt.toInstant().atZone(ZoneId.of("Israel"))).plusDays(1).format(formatter);
 
-        sendRequest("update", line,context);
+        sendRequest("update", line, context);
     }
 
     /**
