@@ -26,6 +26,8 @@ import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -101,12 +103,18 @@ public class DbHandler extends SQLiteOpenHelper {
     }
 
     public void resetArtistsData() {
+        Cursor c = conn.rawQuery("SELECT MIN(DATE) FROM photos where date != ''", new String[]{});
+        String firstDate = util.today().toString();
+        if (c.moveToNext()) {
+            firstDate = c.getString(0);
+        }
         conn.execSQL("DROP TABLE IF EXISTS " + TABLE_ARTISTS_DATA);
         String createArtist = "CREATE TABLE artist_stats AS " +
             "SELECT ARTIST, " +
                 "IFNULL(ROUND(COUNT(CASE WHEN USED = 0 AND only_weekend != 1 THEN 1 END) * 1.0 / COUNT(CASE WHEN only_weekend != 1 THEN 1 END), 2), 0) AS PERCENTAGE, " +
                 "IFNULL(ROUND(COUNT(CASE WHEN USED = 0 AND (VINYL = 1 OR only_weekend = 1) THEN 1 END) * 1.0 / COUNT(CASE WHEN VINYL = 1 OR only_weekend = 1 THEN 1 END), 2), 0) " +
-                "AS VINYL_PERCENTAGE, COUNT(*) AS TOTAL FROM photos GROUP BY ARTIST";
+                "AS VINYL_PERCENTAGE, COUNT(*) AS TOTAL, " +
+                "CASE WHEN MAX(DATE) = '' THEN '" + firstDate + "' ELSE MAX(DATE) END as latest_date FROM photos GROUP BY ARTIST";
         conn.execSQL(createArtist);
     }
     /**
@@ -203,14 +211,19 @@ public class DbHandler extends SQLiteOpenHelper {
     }
 
     private Cursor getPercentBasedCursor(String column, String artist) {
-        String query = "SELECT ARTIST FROM ARTIST_STATS WHERE " + column + " > 0 ";
+        String query = "SELECT ARTIST, " +
+                "CASE" +
+                " WHEN latest_date IS NULL OR latest_date = '' THEN " + column +
+                " ELSE " + column +" * (1.0 + (julianday('now') - julianday(latest_date)))" +
+                " END AS combined_score" +
+                " FROM ARTIST_STATS WHERE " + column + " > 0 ";
         String[] args = null;
         if (!artist.isEmpty()) {
             query += "AND ARTIST != ? ";
             args = new String[]{artist};
         }
 
-        query += "ORDER BY RANDOM() * " + column + " LIMIT 1";
+        query += "ORDER BY RANDOM() * combined_score LIMIT 1";
 //        return conn.rawQuery("SELECT " + KEY_ARTIST + ", " + column + ",(SELECT SUM(" + column + ") FROM " + TABLE_ARTISTS_DATA + " WHERE " + KEY_ARTIST +" !='" + artist + "') AS SUM FROM " + TABLE_ARTISTS_DATA + " WHERE " + KEY_ARTIST + " != '" + artist + "' ORDER BY RANDOM();", null);
         return conn.rawQuery(query, args);
     }
@@ -343,7 +356,9 @@ public class DbHandler extends SQLiteOpenHelper {
 
         Date dt = new Date();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yy");
-        String date = LocalDateTime.from(dt.toInstant().atZone(ZoneId.of("Israel"))).plusDays(1).format(formatter);
+//        String date = LocalDateTime.from(dt.toInstant().atZone(ZoneId.of("Israel"))).plusDays(1).format(formatter);
+        String date = util.today().plusDays(1).toString();
+
         values.put(KEY_USED, true);
         values.put(KEY_ORDER, used_order);
         values.put(KEY_DATE, date);
@@ -411,7 +426,8 @@ public class DbHandler extends SQLiteOpenHelper {
         conn.execSQL("UPDATE " + TABLE_NAME + " SET " + KEY_USED + " = 0");
         conn.execSQL("UPDATE " + TABLE_NAME + " SET " + KEY_ORDER + " = null");
         conn.execSQL("UPDATE " + TABLE_NAME + " SET " + KEY_DATE + " = null");
-
+        SimpleDateFormat inputDateFormat = new SimpleDateFormat("dd.MM.yy");
+        SimpleDateFormat outputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         String data = util.sendRequest("restore", "", context);
         if (!data.equals("ERROR")) {
             String[] splitData = data.split("\n");
@@ -433,10 +449,16 @@ public class DbHandler extends SQLiteOpenHelper {
                         strippedString = strippedString[1].split("-");
                         name = strippedString[0].trim();
                         date = strippedString[1].trim();
-
+                        Date inputDate = null;
+                        try {
+                            inputDate = inputDateFormat.parse(date);
+                        } catch (ParseException e) {
+                            throw new RuntimeException(e);
+                        }
+                        String outputDateStr = outputDateFormat.format(inputDate);
                         values.put(KEY_ORDER, place);
                         values.put(KEY_USED, true);
-                        values.put(KEY_DATE, date);
+                        values.put(KEY_DATE, outputDateStr);
                         int rows = conn.update(TABLE_NAME, values, KEY_NAME + " =?", new String[]{name});
                         if (rows == 0) {
                             Log.e("Mismatch name", name);

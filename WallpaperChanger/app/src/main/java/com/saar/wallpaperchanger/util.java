@@ -182,10 +182,13 @@ public class util {
             }
 
             // Close the CSV reader and the database
+            dbHandler.resetArtistsData();
+            Cursor c = db.rawQuery("select NAME from photos WHERE USED = 1 ORDER BY USED_ORDER DESC limit 1", new String[]{});
+            c.moveToFirst();
+            String latestAlbum = c.getString(0);
             reader.close();
             db.close();
-
-            dbHandler.resetArtistsData();
+            changeWallpaper(activity.getApplicationContext(), latestAlbum, false);
 
             // Show a toast message indicating that the data was imported
             Toast.makeText(activity, "Data imported from " + uri.toString(), Toast.LENGTH_SHORT).show();
@@ -194,6 +197,11 @@ public class util {
             e.printStackTrace();
             Toast.makeText(activity, "Error importing data", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public static LocalDateTime today() {
+        Date dt = new Date();
+        return LocalDateTime.from(dt.toInstant().atZone(ZoneId.of("Israel")));
     }
 
     /**
