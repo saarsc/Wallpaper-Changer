@@ -169,9 +169,9 @@ class DatabaseFragment : Fragment() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK) {
             if (requestCode == 1) {
-                util.exportData(activity, data!!.data)
+                activity?.let { data!!.data?.let { it1 -> util.exportData(it, it1) } }
             } else if (requestCode == 2) {
-                util.importDat(activity, data!!.data)
+                activity?.let { data!!.data?.let { it1 -> util.importDat(it, it1) } }
             }
         }
     }

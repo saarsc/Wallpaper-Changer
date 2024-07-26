@@ -109,7 +109,7 @@ class SearchFragment : Fragment() {
                 dialog.setTitle("Albums...")
                 val myNames = dialog.findViewById<View>(R.id.List) as ListView
 
-                val adapter: ArrayAdapter<Photo?> = ArrayAdapter<Any?>(
+                val adapter: ArrayAdapter<Any?> = ArrayAdapter<Any?>(
                     view.context,
                     android.R.layout.simple_list_item_1,
                     android.R.id.text1,

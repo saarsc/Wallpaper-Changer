@@ -13,6 +13,7 @@
         android:theme="@style/AppTheme">
 
         <activity
+            android:exported="true"
             android:name=".MainActivity"
             android:theme="@style/AppTheme">
             <intent-filter>
@@ -26,13 +27,13 @@
             android:name="com.google.android.wearable.standalone"
             android:value="true" />
 
-        <receiver android:name=".NotificationReceiver">
+        <receiver android:exported="true" android:name=".NotificationReceiver">
             <intent-filter>
                 <action android:name="com.saar.wallpaperchanger.roundnoitification" />
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".ChangeWallpaperReceiver">
+        <receiver android:exported="true" android:name=".ChangeWallpaperReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
