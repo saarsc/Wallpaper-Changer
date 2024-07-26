@@ -1,65 +1,58 @@
-package com.saar.wallpaperchanger;
+package com.saar.wallpaperchanger
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.Reader
+import java.util.regex.Pattern
 
-public class CSVReader {
+class CSVReader(reader: Reader?, private val delimiter: String) {
+    private val reader = BufferedReader(reader)
+    @JvmField
+    val header: Array<String> = TODO()
 
-    private BufferedReader reader;
-    private String[] header;
-
-    private String delimiter;
-    public CSVReader(Reader reader, String delimiter) {
-        this.reader = new BufferedReader(reader);
-        this.delimiter = delimiter;
+    init {
         try {
             // Read the first line as the header
-            String line = this.reader.readLine();
+            val line = this.reader.readLine()
             if (line != null) {
-                header = this.splitLine(line);
+                header = this.splitLine(line)
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
     }
 
-    private String[] splitLine(String line) {
-        return line.split(Pattern.quote(this.delimiter));
-    }
-    public String[] getHeader() {
-        return header;
+    private fun splitLine(line: String): Array<String> {
+        return line.split(Pattern.quote(this.delimiter).toRegex()).dropLastWhile { it.isEmpty() }
+            .toTypedArray()
     }
 
-    public String[] readNext() {
+    fun readNext(): Array<String>? {
         try {
-            String line = reader.readLine();
+            val line = reader.readLine()
             if (line != null) {
-                return this.splitLine(line);
+                return this.splitLine(line)
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
-        return null;
+        return null
     }
 
-    public List<String[]> readAll() {
-        List<String[]> rows = new ArrayList<>();
-        String[] row;
-        while ((row = readNext()) != null) {
-            rows.add(row);
+    fun readAll(): List<Array<String>> {
+        val rows: MutableList<Array<String>> = ArrayList()
+        var row: Array<String>
+        while ((readNext().also { row = it!! }) != null) {
+            rows.add(row)
         }
-        return rows;
+        return rows
     }
 
-    public void close() {
+    fun close() {
         try {
-            reader.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            reader.close()
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
     }
 }

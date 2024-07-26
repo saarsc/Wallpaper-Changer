@@ -1,50 +1,40 @@
-package com.saar.wallpaperchanger;
+package com.saar.wallpaperchanger
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.widget.Toast;
+import android.content.Context
+import android.widget.Toast
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.work.Worker
+import androidx.work.WorkerParameters
+import com.saar.wallpaperchanger.util.changeWallpaper
 
-import androidx.annotation.NonNull;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
-import androidx.work.ForegroundInfo;
-import androidx.work.Worker;
-import androidx.work.WorkerParameters;
+class WallpaperChangeWorker(private val context: Context, workerParams: WorkerParameters) : Worker(
+    context, workerParams
+) {
+    override fun doWork(): Result {
+        Toast.makeText(applicationContext, "Job Started", Toast.LENGTH_SHORT).show()
+        val builder = NotificationCompat.Builder(
+            context, "Set Round Name"
+        )
+            .setContentTitle("Work manager is running")
+            .setSmallIcon(R.drawable.notificationicon)
+            .setContentText("I'm not the problem my dud")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        val notificationManager = NotificationManagerCompat.from(context)
+        notificationManager.notify(101, builder.build())
 
-import static android.content.Context.MODE_PRIVATE;
+        val sp = context.getSharedPreferences("currentAlbum", Context.MODE_PRIVATE)
+        val nextAlbum = sp.getString("next_album", "")
+        if (nextAlbum == "") {
+            changeWallpaper(this.context)
+        } else {
+            changeWallpaper(this.context, nextAlbum, true)
 
-public class WallpaperChangeWorker extends Worker {
-    private Context context;
-    public WallpaperChangeWorker(@NonNull @org.jetbrains.annotations.NotNull Context context, @NonNull @org.jetbrains.annotations.NotNull WorkerParameters workerParams) {
-        super(context, workerParams);
-        this.context = context;
-    }
-
-    @NonNull
-    @org.jetbrains.annotations.NotNull
-    @Override
-    public Result doWork() {
-        Toast.makeText(getApplicationContext(), "Job Started", Toast.LENGTH_SHORT).show();
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, "Set Round Name")
-                .setContentTitle("Work manager is running")
-                .setSmallIcon(R.drawable.notificationicon)
-                .setContentText("I'm not the problem my dud")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
-        notificationManager.notify(101, builder.build());
-
-        SharedPreferences sp = this.context.getSharedPreferences("currentAlbum",MODE_PRIVATE);
-        String nextAlbum = sp.getString("next_album","");
-        if(nextAlbum.equals("")) {
-            util.changeWallpaper(this.context);
-        }else{
-            util.changeWallpaper(this.context,nextAlbum,true);
-
-            SharedPreferences.Editor editor = sp.edit();
-            editor.putString("next_album","");
-            editor.apply();
+            val editor = sp.edit()
+            editor.putString("next_album", "")
+            editor.apply()
         }
 
-        return Result.success();
+        return Result.success()
     }
 }
