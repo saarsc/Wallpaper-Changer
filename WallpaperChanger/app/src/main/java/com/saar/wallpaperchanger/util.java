@@ -269,7 +269,7 @@ public class util {
 
 //        Converting PNG / JPG to bitmap so it called be set as the wallpaper
 
-            FutureTarget<Bitmap> futureTarget = Glide.with(context).asBitmap().load(path).submit(2400, 2400);
+            FutureTarget<Bitmap> futureTarget = Glide.with(context).asBitmap().load(path).submit(3120, 3120);
             Bitmap wallpaper = null;
             try {
                 wallpaper = futureTarget.get();

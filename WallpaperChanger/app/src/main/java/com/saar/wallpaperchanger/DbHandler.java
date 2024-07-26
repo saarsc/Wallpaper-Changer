@@ -114,7 +114,7 @@ public class DbHandler extends SQLiteOpenHelper {
                 "IFNULL(ROUND(COUNT(CASE WHEN USED = 0 AND only_weekend != 1 THEN 1 END) * 1.0 / COUNT(CASE WHEN only_weekend != 1 THEN 1 END), 2), 0) AS PERCENTAGE, " +
                 "IFNULL(ROUND(COUNT(CASE WHEN USED = 0 AND (VINYL = 1 OR only_weekend = 1) THEN 1 END) * 1.0 / COUNT(CASE WHEN VINYL = 1 OR only_weekend = 1 THEN 1 END), 2), 0) " +
                 "AS VINYL_PERCENTAGE, COUNT(*) AS TOTAL, " +
-                "CASE WHEN MAX(DATE) = '' THEN '" + firstDate + "' ELSE MAX(DATE) END as latest_date FROM photos GROUP BY ARTIST";
+                "CASE WHEN MAX(DATE) IS NULL THEN '" + firstDate + "' ELSE MAX(DATE) END as latest_date FROM photos GROUP BY ARTIST";
         conn.execSQL(createArtist);
     }
     /**
@@ -182,24 +182,13 @@ public class DbHandler extends SQLiteOpenHelper {
     *  available / artist total
     * */
     private String percentageBasedArtist(String artist) {
-        String relevantColumn = KEY_PERCENTAGE;
+        String result = null;
         if (this.shouldUseVinyl()) {
-            relevantColumn = "VINYL_PERCENTAGE";
+            result = this.percentageBasedArtistForColumn("VINYL_PERCENTAGE", artist);
         }
-        Cursor cursor = this.getPercentBasedCursor(relevantColumn, artist);
-        boolean noResults = cursor.getCount() == 0;
-
-        if (this.shouldUseVinyl() && noResults) {
-            cursor = this.getPercentBasedCursor(KEY_PERCENTAGE, artist);
-            noResults = cursor.getCount() == 0;
+        if (result == null) {
+            result = this.percentageBasedArtistForColumn(KEY_PERCENTAGE, artist);
         }
-
-//      If there is a 0 percent sum
-        if(noResults) {
-            cursor = this.getPercentBasedCursor(KEY_PERCENTAGE, "");
-        }
-        cursor.moveToFirst();
-
 //        double r = BigDecimal.valueOf(Math.random() * cursor.getFloat(2)).setScale(2, RoundingMode.HALF_UP).doubleValue();
 //        while (r > 0) {
 //            r -= cursor.getFloat(1);
@@ -207,6 +196,21 @@ public class DbHandler extends SQLiteOpenHelper {
 //        }
 //        cursor.moveToPrevious();
 
+        return result;
+    }
+
+    private String percentageBasedArtistForColumn(String column, String artist) {
+        Cursor cursor = this.getPercentBasedCursor(column, artist);
+        boolean noResults = cursor.getCount() == 0;
+
+        if (noResults) {
+            cursor = this.getPercentBasedCursor(column, "");
+            noResults = cursor.getCount() == 0;
+        }
+        if (noResults) {
+            return null;
+        }
+        cursor.moveToFirst();
         return cursor.getString(0);
     }
 
@@ -222,7 +226,7 @@ public class DbHandler extends SQLiteOpenHelper {
             query += "AND ARTIST != ? ";
             args = new String[]{artist};
         }
-
+//SELECT ARTIST,  CASE WHEN latest_date IS NULL OR latest_date = '' THEN  PERCENTAGE  ELSE     (1.0 + (julianday('now') - julianday(latest_date)))  END AS combined_score FROM ARTIST_STATS WHERE  PERCENTAGE > 0
         query += "ORDER BY RANDOM() * combined_score LIMIT 1";
 //        return conn.rawQuery("SELECT " + KEY_ARTIST + ", " + column + ",(SELECT SUM(" + column + ") FROM " + TABLE_ARTISTS_DATA + " WHERE " + KEY_ARTIST +" !='" + artist + "') AS SUM FROM " + TABLE_ARTISTS_DATA + " WHERE " + KEY_ARTIST + " != '" + artist + "' ORDER BY RANDOM();", null);
         return conn.rawQuery(query, args);
