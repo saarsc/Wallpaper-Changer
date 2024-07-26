@@ -1,3 +1,4 @@
+from time import sleep
 from requests import get
 from requests import post
 from string import capwords
@@ -35,6 +36,10 @@ def get_image(album, artist):
 
         imageUrl = r.json()[0]["hires"]
         download_image(path,imageUrl)
+        print("Sleeping")
+        sleep(1)
+        print("Done Sleeping")
+
 with open("list.txt","r",encoding="utf8") as f:
     lines = f.readlines()
     artist = ""

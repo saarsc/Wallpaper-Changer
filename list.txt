@@ -2,14 +2,16 @@
 	Submarine
 #Alt J
 	An Awesome Wave
-	RELAXER
 	This Is All Yours
+	RELAXER
+	The Dream
 #Arcade Fire
-	Everything Now
 	Funeral
 	Neon Bible
-	Reflektor
 	The Suburbs
+	Reflektor
+	Everything Now
+	WE
 #Arctic Monkeys
 	AM
 	Favorite Worst Nightmare
@@ -17,18 +19,26 @@
 	Suck It And See
 	Tranquility Base Hotel + Casino
 	Whatever People Say I Am, That's What I'm Not
+	The Car
 #Asaf Avidan
 	Anagnorisis
 	Different Pulses
 	Gold Shadow
 	The Study On Falling
+#Atoms For Peace
+	AMOK
 #Balthazar
 	Fever
 	Sand
+	Thin Walls
+#Billie Eilish
+	When We Fall A Sleep Where Do We Go
 #Bon Iver
 	Bon Iver
 	For Emma, Forever Ago
 	22 A Million
+#Boygenius
+	The Record
 #Cage The Elephant
 	Cage The Elephant
 	Melophobia
@@ -36,6 +46,7 @@
 	Tell Me Im Pretty
 	Thank You, Happy Birthday
 	Unpeeled
+	Neon Pill
 #Catfish And The Bottlemen
 	The Balance
 	The Balcony
@@ -58,6 +69,7 @@
 #Daughter
 	If You Leave
 	Not To Disappear
+	Stereo Mind Games
 #David Bowie
 	The Rise And Fall Of Ziggy Stardust And The Spiders From Mars
 #Deerhunter
@@ -73,15 +85,16 @@
 	Ex;Re
 #Foals
 	Antidotes
+	Total Life Forever
+	Holy Fire
+	What Went Down
 	Everything Not Saved Will Be Lost Pt 1
 	Everything Not Saved Will Be Lost Pt 2
-	Holy Fire
-	Total Life Forever
-	What Went Down
+	Life Is Yours
 #Fort Minor
 	The Rising Tide
 #Glass Animals
-	How to be a human being
+	How To Be A Human Being
 	ZABA
 	Dreamland
 #Kings Of Leon
@@ -93,6 +106,7 @@
 	Walls
 	Youth & Young Manhood
 	When You See Yourself
+	Can We Please Have Fun
 #Linkin Park
 	A Thousand Suns
 	Collision Course
@@ -118,11 +132,19 @@
 	Guy Walks Into A Bar
 	The Great Pretender
 	Flashbacks A Collection Of B Sides 
+#Nick Cave
+	The Boatman Call
+	The Good Son
+#Paul Simon
+	Graceland
 #Perfect Confusion
 	Perfect Confusion
 #Phoebe Bridgers
 	Punisher
 	Stranger In The Alps
+#Pink Floyd
+	Wish You Were Here
+	The Dark Side Of The Moon
 #Portugal The Man
 	American Ghetto
 	Censored Colors
@@ -133,6 +155,7 @@
 	The Satanic Satanist
 	Waiter You Vultures
 	Woodstock
+	Chris Black Changed My Life
 #Radiohead
 	A Moon Shaped Pool
 	Amnesiac
@@ -156,11 +179,17 @@
 	How Did We Get So Dark
 	Royal Blood
 	Typhoons
+	Back To The Water Below
 #Tame Impala
 	Currents
 	InnerSpeaker
 	Lonerism
 	The Slow Rush
+#The Beatles 
+	Revolver
+	Abbey's Road
+#The Cure
+	Seventeen Seconds
 #The Districts
 	A Flourish And A Spoil
 	Popular Manipulation
@@ -171,10 +200,12 @@
 	Prelude To War
 #The Fratellis
 	Costello Music
-	Eyes Wide, Tongue Tide
+	Eyes Wide, Tongue Tied
 	Here We Stand
 	In Your Own Sweet Time
 	We Need Medicine
+#The Killers
+	Pressure Machine
 #The Last Shadow Puppets
 	Everything You've Come To Expect
 	The Age Of The Understatement
@@ -193,16 +224,24 @@
 	Sleep Well Beast
 	The National
 	Trouble Will Find Me
+	First Two Pages Of Frankenstein
+	Laugh Track
+#The Smile
+	A Light For Attracting Attention
+	Wall Of Eyes
 #Theangelcy
 	Exit Inside
 	Nodyssey
 #Thom Yorke
-	AMOK
 	ANIMA
 	The Eraser
 	Tomorrow's Modern Box
 #Two Doors Cinema Club
 	Tourist History
+#Warhaus
+	We Fucked a Flame Into Being
+	Warhaus
+	Ha Ha Heartbreak
 #Wolf Alice
 	Visions Of Life
 	Blue Weekend
