@@ -7,8 +7,8 @@ import java.util.regex.Pattern
 
 class CSVReader(reader: Reader?, private val delimiter: String) {
     private val reader = BufferedReader(reader)
-    @JvmField
-    var header: Array<String> = TODO()
+
+    lateinit var header: Array<String>;
 
     init {
         try {

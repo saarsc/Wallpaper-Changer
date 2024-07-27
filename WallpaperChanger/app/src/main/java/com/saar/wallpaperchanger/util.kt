@@ -32,6 +32,9 @@ import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.URL
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -40,6 +43,7 @@ import java.util.Date
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.stream.Collectors
 
 object util {
     /**
@@ -113,6 +117,14 @@ object util {
             .enqueueUniqueWork("Wallpaper Changer", ExistingWorkPolicy.REPLACE, workRequest)
     }
 
+    fun getAllFilePaths(directory: String): List<String> {
+        val startPath = Paths.get(directory)
+        return Files.walk(startPath)
+            .filter { Files.isRegularFile(it) }
+            .map(Path::toString)
+            .collect(Collectors.toList())
+    }
+
     fun exportData(activity: Activity, uri: Uri) {
         try {
             val outputStream = activity.contentResolver.openOutputStream(uri)
@@ -182,10 +194,13 @@ object util {
                 arrayOf()
             )
             c.moveToFirst()
-            val latestAlbum = c.getString(0)
+            if (c.count > 0) {
+                val latestAlbum = c.getString(0)
+                changeWallpaper(activity.applicationContext, latestAlbum, false)
+            }
+            c.close()
             reader.close()
             db.close()
-            changeWallpaper(activity.applicationContext, latestAlbum, false)
 
             // Show a toast message indicating that the data was imported
             Toast.makeText(activity, "Data imported from $uri", Toast.LENGTH_SHORT).show()

@@ -90,9 +90,7 @@ class DbHandler(context: Context) :
         editor.putInt("num", 1)
         editor.apply()
 
-        val files = listf("/storage/emulated/0/Homescreen")
-
-        for (file in files) {
+        for (file in util.getAllFilePaths("/storage/emulated/0/Homescreen")) {
             val values = ContentValues()
             val splitPath = file.split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
             var fileName = splitPath[splitPath.size - 1].trim { it <= ' ' }
@@ -343,7 +341,7 @@ class DbHandler(context: Context) :
             return photo
         }
 
-    /**
+    /**F
      * _->_
      * Resetting the DB and initialize it
      */
