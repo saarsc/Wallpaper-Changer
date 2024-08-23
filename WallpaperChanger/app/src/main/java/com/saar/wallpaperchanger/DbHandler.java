@@ -114,7 +114,7 @@ public class DbHandler extends SQLiteOpenHelper {
                 "IFNULL(ROUND(COUNT(CASE WHEN USED = 0 AND only_weekend != 1 THEN 1 END) * 1.0 / COUNT(CASE WHEN only_weekend != 1 THEN 1 END), 2), 0) AS PERCENTAGE, " +
                 "IFNULL(ROUND(COUNT(CASE WHEN USED = 0 AND (VINYL = 1 OR only_weekend = 1) THEN 1 END) * 1.0 / COUNT(CASE WHEN VINYL = 1 OR only_weekend = 1 THEN 1 END), 2), 0) " +
                 "AS VINYL_PERCENTAGE, COUNT(*) AS TOTAL, " +
-                "CASE WHEN MAX(DATE) IS NULL THEN '" + firstDate + "' ELSE MAX(DATE) END as latest_date FROM photos GROUP BY ARTIST";
+                " IFNULL(MAX(DATE), '"+ firstDate + "') as latest_date FROM photos GROUP BY ARTIST";
         conn.execSQL(createArtist);
     }
     /**
