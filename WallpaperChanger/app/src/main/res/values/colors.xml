@@ -3,5 +3,9 @@
     <color name="colorPrimary">#6200EE</color>
     <color name="colorPrimaryDark">#3700B3</color>
     <color name="colorAccent">#03DAC5</color>
-
+    <color name="backgroundDark">#121212</color>
+    <color name="itemBackgroundDark">#1E1E1E</color>
+    <color name="textColorPrimaryDark">#FFFFFF</color>
+    <color name="spinnerBackgroundDark">#2A2A2A</color>
+    <color name="spinnerPopupBackgroundDark">#2A2A2A</color>
 </resources>

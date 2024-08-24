@@ -17,6 +17,9 @@ import android.widget.Switch
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
+import com.saar.wallpaperchanger.utils.fileUtils.exportData
+import com.saar.wallpaperchanger.utils.fileUtils.importDat
+import com.saar.wallpaperchanger.utils.imageUtils
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.time.ZoneId
@@ -104,8 +107,13 @@ class DatabaseFragment : Fragment() {
             dbHandler.restoreDB()
         }
 
+        val restoreAll = view.findViewById<Button>(R.id.btnRestoreAll)
+        restoreAll.setOnClickListener { v: View? ->
+            dbHandler.restoreHistory()
+        }
+
         val pickWallpaper = view.findViewById<Button>(R.id.mainActivityChangeWallpaper)
-        pickWallpaper.setOnClickListener { v: View? -> util.changeWallpaper(view.context) }
+        pickWallpaper.setOnClickListener { v: View? -> imageUtils.changeWallpaper(view.context) }
 
 
         val resetDB = view.findViewById<Button>(R.id.btnResetDB)
@@ -120,7 +128,7 @@ class DatabaseFragment : Fragment() {
         countInfo.text = countString
 
         val arrayAdapterAlbums =
-            ArrayAdapter(view.context, android.R.layout.select_dialog_item, dbHandler.allNames)
+            ArrayAdapter(view.context, android.R.layout.select_dialog_item, dbHandler.allNames())
         val autoCompleteTextView = view.findViewById<AutoCompleteTextView>(R.id.autoAlbumName)
         val confirm = view.findViewById<Button>(R.id.btnConfirm)
 
@@ -169,9 +177,9 @@ class DatabaseFragment : Fragment() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == Activity.RESULT_OK) {
             if (requestCode == 1) {
-                activity?.let { data!!.data?.let { it1 -> util.exportData(it, it1) } }
+                activity?.let { data!!.data?.let { it1 -> exportData(it, it1) } }
             } else if (requestCode == 2) {
-                activity?.let { data!!.data?.let { it1 -> util.importDat(it, it1) } }
+                activity?.let { data!!.data?.let { it1 -> importDat(it, it1) } }
             }
         }
     }

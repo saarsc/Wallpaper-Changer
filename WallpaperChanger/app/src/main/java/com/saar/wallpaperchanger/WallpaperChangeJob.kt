@@ -3,8 +3,8 @@ package com.saar.wallpaperchanger
 import android.app.job.JobParameters
 import android.app.job.JobService
 import android.widget.Toast
-import com.saar.wallpaperchanger.util.changeWallpaper
-import com.saar.wallpaperchanger.util.scheduleJob
+import com.saar.wallpaperchanger.utils.imageUtils.changeWallpaper
+import com.saar.wallpaperchanger.utils.jobUtils.scheduleJob
 
 class WallpaperChangeJob : JobService() {
     override fun onStartJob(jobParameters: JobParameters): Boolean {

@@ -1,5 +1,6 @@
 package com.saar.wallpaperchanger
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.ContentValues
 import android.content.Context
@@ -15,14 +16,18 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.RemoteInput
+import com.saar.wallpaperchanger.utils.apiUtils.sendRequest
+import com.saar.wallpaperchanger.utils.dateUtils.today
+import com.saar.wallpaperchanger.utils.fileUtils.getAllFilePaths
+import com.saar.wallpaperchanger.utils.imageUtils.changeWallpaper
+import com.saar.wallpaperchanger.utils.stringUtils.extractNameDateAndPlace
+import com.saar.wallpaperchanger.utils.stringUtils.wordToNumber
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.text.ParseException
-import java.text.SimpleDateFormat
 import java.time.format.DateTimeFormatter
 import java.util.Arrays
 import java.util.Calendar
@@ -59,24 +64,38 @@ class DbHandler(context: Context) :
     }
 
     private fun resetStats() {
-        val CREATE_STATS =
-            "CREATE TABLE IF NOT EXISTS " + TABLE_STATS_TABLE_NAME + " ( " + KEY_ID + " INTEGER PRIMARY KEY," + KEY_NAME + " TEXT, " + KEY_STATS_FIRST_PLAYED + " DATE," + KEY_STATS_LAST_PLAYED + " DATE," + KEY_STATS_FIRST_PLAYED_NAME + " TEXT," + KEY_STATS_LAST_PLAYED_NAME + " TEXT, " + KEY_STATS_OCCURRENCES + " INTEGER);"
+        conn.execSQL("DROP TABLE IF EXISTS $TABLE_STATS_TABLE_NAME");
+        val CREATE_STATS = "CREATE TABLE IF NOT EXISTS $TABLE_STATS_TABLE_NAME AS " +
+             "SELECT $KEY_NAME, MIN($KEY_DATE) as $KEY_STATS_FIRST_PLAYED, MAX($KEY_DATE) as $KEY_STATS_LAST_PLAYED, COUNT(*) as $KEY_STATS_OCCURRENCES FROM $TABLE_HISTORY_TABLE_NAME GROUP BY $KEY_NAME;"
+//        val CREATE_STATS =
+//            "CREATE TABLE IF NOT EXISTS " + TABLE_STATS_TABLE_NAME + " ( " + KEY_ID + " INTEGER PRIMARY KEY," + KEY_NAME + " TEXT, " + KEY_STATS_FIRST_PLAYED + " DATE," + KEY_STATS_LAST_PLAYED + " DATE," + KEY_STATS_FIRST_PLAYED_NAME + " TEXT," + KEY_STATS_LAST_PLAYED_NAME + " TEXT, " + KEY_STATS_OCCURRENCES + " INTEGER);"
         conn.execSQL(CREATE_STATS)
+    }
+
+    private fun resetHistory() {
+        conn.execSQL("DROP TABLE IF EXISTS $TABLE_HISTORY_TABLE_NAME");
+        val CREATE_HISTORY =
+            "CREATE TABLE IF NOT EXISTS $TABLE_HISTORY_TABLE_NAME ( $KEY_ID INTEGER PRIMARY KEY, album_id INTEGER,$KEY_NAME TEXT, $KEY_DATE DATE, ROUND_NAME TEXT, $KEY_ORDER INTEGER, ROUND_NUMBER INTEGER, FOREIGN KEY (album_id) REFERENCES photos(ID));"
+        conn.execSQL(CREATE_HISTORY)
     }
 
     fun resetArtistsData() {
         val c = conn.rawQuery("SELECT MIN(DATE) FROM photos where date != ''", arrayOf())
-        var firstDate = util.today().toString()
+        var firstDate = today().toString()
         if (c.moveToNext()) {
             firstDate = c.getString(0)
         }
         conn.execSQL("DROP TABLE IF EXISTS " + TABLE_ARTISTS_DATA)
         val createArtist = "CREATE TABLE artist_stats AS " +
                 "SELECT ARTIST, " +
-                "IFNULL(ROUND(COUNT(CASE WHEN USED = 0 AND only_weekend != 1 THEN 1 END) * 1.0 / COUNT(CASE WHEN only_weekend != 1 THEN 1 END), 2), 0) AS PERCENTAGE, " +
-                "IFNULL(ROUND(COUNT(CASE WHEN USED = 0 AND (VINYL = 1 OR only_weekend = 1) THEN 1 END) * 1.0 / COUNT(CASE WHEN VINYL = 1 OR only_weekend = 1 THEN 1 END), 2), 0) " +
+                "IFNULL(ROUND(COUNT(CASE WHEN p.USED = 0 AND p.only_weekend != 1 THEN 1 END) * 1.0 / COUNT(CASE WHEN p.only_weekend != 1 THEN 1 END), 2), 0) AS PERCENTAGE, " +
+                "IFNULL(ROUND(COUNT(CASE WHEN p.USED = 0 AND (p.VINYL = 1 OR p.only_weekend = 1) THEN 1 END) * 1.0 / COUNT(CASE WHEN p.VINYL = 1 OR p.only_weekend = 1 THEN 1 END), 2), 0) " +
                 "AS VINYL_PERCENTAGE, COUNT(*) AS TOTAL, " +
-                "CASE WHEN MAX(DATE) IS NULL THEN '" + firstDate + "' ELSE MAX(DATE) END as latest_date FROM photos GROUP BY ARTIST"
+                "IFNULL((SELECT MAX(sh.DATE)" +
+                "            FROM $TABLE_HISTORY_TABLE_NAME sh" +
+                "            JOIN $TABLE_NAME a ON sh.album_id = a.id" +
+                "            WHERE a.ARTIST = p.ARTIST), '$firstDate') AS last_played " +
+                "FROM photos p GROUP BY p.ARTIST"
         conn.execSQL(createArtist)
     }
 
@@ -90,7 +109,7 @@ class DbHandler(context: Context) :
         editor.putInt("num", 1)
         editor.apply()
 
-        for (file in util.getAllFilePaths("/storage/emulated/0/Homescreen")) {
+        for (file in getAllFilePaths("/storage/emulated/0/Homescreen")) {
             val values = ContentValues()
             val splitPath = file.split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
             var fileName = splitPath[splitPath.size - 1].trim { it <= ' ' }
@@ -249,7 +268,7 @@ class DbHandler(context: Context) :
                 editor.putString("current_round", name)
                 editor.apply()
 
-                util.sendRequest("new", name, context)
+                sendRequest("new", name, context)
 
                 resetDB()
 
@@ -326,7 +345,7 @@ class DbHandler(context: Context) :
             val dt = Date()
             val formatter = DateTimeFormatter.ofPattern("dd.MM.yy")
             //        String date = LocalDateTime.from(dt.toInstant().atZone(ZoneId.of("Israel"))).plusDays(1).format(formatter);
-            val date = util.today().plusDays(1).toString()
+            val date = today().plusDays(1).toString()
 
             values.put(KEY_USED, true)
             values.put(KEY_ORDER, used_order)
@@ -397,44 +416,25 @@ class DbHandler(context: Context) :
         conn.execSQL("UPDATE " + TABLE_NAME + " SET " + KEY_USED + " = 0")
         conn.execSQL("UPDATE " + TABLE_NAME + " SET " + KEY_ORDER + " = null")
         conn.execSQL("UPDATE " + TABLE_NAME + " SET " + KEY_DATE + " = null")
-        val inputDateFormat = SimpleDateFormat("dd.MM.yy")
-        val outputDateFormat = SimpleDateFormat("yyyy-MM-dd")
-        val data = util.sendRequest("restore", "", context)
+
+        val data = sendRequest("restore", "", context)
         if (data != "ERROR") {
             val splitData = data.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
             var i = 0
             if (splitData.size > 0) {
-                var strippedString: Array<String>
-                var place: Int
-                var name: String? = null
-                var date: String
+                lateinit var lastName: String
 
                 for (album in splitData) {
                     if (album != "") {
                         val values = ContentValues()
 
-                        strippedString = album.split("\\)".toRegex()).dropLastWhile { it.isEmpty() }
-                            .toTypedArray()
-
-                        place = strippedString[0].trim { it <= ' ' }.toInt()
-
-                        strippedString =
-                            strippedString[1].split("-".toRegex()).dropLastWhile { it.isEmpty() }
-                                .toTypedArray()
-                        name = strippedString[0].trim { it <= ' ' }
-                        date = strippedString[1].trim { it <= ' ' }
-                        var inputDate: Date? = null
-                        try {
-                            inputDate = inputDateFormat.parse(date)
-                        } catch (e: ParseException) {
-                            throw RuntimeException(e)
-                        }
-                        val outputDateStr = outputDateFormat.format(inputDate)
+                        val (name, date, place) = extractNameDateAndPlace(album)
                         values.put(KEY_ORDER, place)
                         values.put(KEY_USED, true)
-                        values.put(KEY_DATE, outputDateStr)
+                        values.put(KEY_DATE, date)
+                        lastName = name
                         val rows =
-                            conn.update(TABLE_NAME, values, KEY_NAME + " =?", arrayOf<String>(name))
+                            conn.update(TABLE_NAME, values, "$KEY_NAME =?", arrayOf<String>(name))
                         if (rows == 0) {
                             Log.e("Mismatch name", name)
                         }
@@ -442,7 +442,7 @@ class DbHandler(context: Context) :
                     }
                 }
 
-                util.changeWallpaper(context, name, false)
+                changeWallpaper(context, lastName, false)
             }
             val sharedPreferences = context.getSharedPreferences("USED_ORDER", Context.MODE_PRIVATE)
             val editor = sharedPreferences.edit()
@@ -452,43 +452,60 @@ class DbHandler(context: Context) :
         resetArtistsData()
     }
 
-    fun restoreStats() {
-        conn.execSQL("DROP TABLE IF EXISTS " + TABLE_STATS_TABLE_NAME)
-        resetStats()
-        val prevData = util.sendRequest("restore", "yes", context)
-
+    fun restoreHistory() {
+        conn.execSQL("DROP TABLE IF EXISTS " + TABLE_HISTORY_TABLE_NAME)
+        resetHistory()
+        val prevData = sendRequest("restore", "yes", context)
+        val knownAlbumIds = HashMap<String, Int>()
         try {
             val jsonData = JSONObject(prevData)
             val keys = jsonData.keys()
 
             while (keys.hasNext()) {
                 val key = keys.next()
-
+                val roundNumber = wordToNumber(key.split("Round")[0].trim());
                 val roundData =
                     jsonData[key].toString().split("\n".toRegex()).dropLastWhile { it.isEmpty() }
                         .toTypedArray()
                 for (album in roundData) {
                     if (album != "") {
-                        var withoutNumber: Array<String>? = null
-                        try {
-                            withoutNumber =
-                                album.split("\\)".toRegex()).dropLastWhile { it.isEmpty() }
-                                    .toTypedArray()[1].split("-".toRegex())
-                                    .dropLastWhile { it.isEmpty() }
-                                    .toTypedArray()
-                        } catch (e: Exception) {
-                            Log.e("Current album: ", album)
+                        val values = ContentValues()
+
+                        val (name, date, place) = extractNameDateAndPlace(album)
+                        val albumId = if (knownAlbumIds.containsKey(name)) {
+                            knownAlbumIds[name]
+                        } else {
+                            val cursor = conn.rawQuery(
+                                "SELECT $KEY_ID FROM $TABLE_NAME WHERE $KEY_NAME = ?",
+                                arrayOf(name)
+                            )
+                            if (cursor.moveToFirst()) {
+                                var _albumId = cursor.getInt(0)
+                                knownAlbumIds[name] = _albumId
+                                _albumId
+                            } else {
+                                null
+
+                            }
                         }
 
-                        val name = withoutNumber!![0].trim { it <= ' ' }
-                        val date = withoutNumber[1]
-                        //                        updateStats(name,date,key);
+                        values.put(KEY_ORDER, place)
+                        values.put(KEY_DATE, date)
+                        values.put("ROUND_NAME", key)
+                        values.put("ROUND_NUMBER", roundNumber)
+                        values.put(KEY_NAME, name)
+                        if (albumId != null) {
+                            values.put("album_id", albumId)
+                        }
+                        conn.insert(TABLE_HISTORY_TABLE_NAME, null, values)
                     }
                 }
             }
         } catch (e: JSONException) {
             e.printStackTrace()
         }
+        restoreDB()
+        resetStats()
     }
 
     private fun updateStats(name: String, date: String, key: String) {
@@ -585,27 +602,26 @@ class DbHandler(context: Context) :
         notificationManagerCompat.notify(1, builder.build())
     }
 
-    val allNames: List<String>
+    fun allNames(): List<String> {
         /**
          * used for the search auto-complete
          *
          * @return List<String> names  a list of all the albums names in the DB
         </String> */
-        get() {
-            val cursor = conn.rawQuery("SELECT * FROM " + TABLE_NAME, null)
+        val cursor = conn.rawQuery("SELECT * FROM " + TABLE_NAME, null)
 
-            val names: MutableList<String> = ArrayList()
+        val names: MutableList<String> = ArrayList()
 
-            if (cursor.moveToFirst()) {
+        if (cursor.moveToFirst()) {
+            names.add(cursor.getString(cursor.getColumnIndex(KEY_NAME)))
+            while (cursor.moveToNext()) {
                 names.add(cursor.getString(cursor.getColumnIndex(KEY_NAME)))
-                while (cursor.moveToNext()) {
-                    names.add(cursor.getString(cursor.getColumnIndex(KEY_NAME)))
-                }
             }
-            cursor.close()
-
-            return names
         }
+        cursor.close()
+
+        return names
+    }
 
     /**
      * Given an album name returns the date that it was played
@@ -715,40 +731,75 @@ class DbHandler(context: Context) :
     val rowsCount: Long
         get() = DatabaseUtils.queryNumEntries(conn, TABLE_NAME)
 
-    val allArtistNames: List<String>
+    @SuppressLint("Range")
+    fun allArtistNames(): List<String> {
+
         /**
          * used for the search auto-complete-artist
          *
          * @return List<String> names  a list of all the artist names in the DB
         </String> */
-        get() {
-            val cursor = conn.rawQuery("SELECT * FROM " + TABLE_NAME, null)
 
-            val names = HashSet<String>()
+        val cursor = conn.rawQuery("SELECT * FROM " + TABLE_NAME, null)
 
-            if (cursor.moveToFirst()) {
+        val names = HashSet<String>()
+
+        if (cursor.moveToFirst()) {
+            names.add(cursor.getString(cursor.getColumnIndex(KEY_ARTIST)))
+            while (cursor.moveToNext()) {
                 names.add(cursor.getString(cursor.getColumnIndex(KEY_ARTIST)))
-                while (cursor.moveToNext()) {
-                    names.add(cursor.getString(cursor.getColumnIndex(KEY_ARTIST)))
-                }
             }
-            cursor.close()
-
-            return ArrayList(names)
         }
+        cursor.close()
 
-    fun searchByArtist(artist: String): String {
-        val totalAmount = conn.rawQuery(
+        return ArrayList(names)
+    }
+
+    fun searchByArtist(artist: String): ArrayList<String> {
+        val cursor = conn.rawQuery(
             "select * from " + TABLE_NAME + " where " + KEY_ARTIST + " =?",
             arrayOf(artist)
-        ).count
+        )
+        val names = HashSet<String>()
 
-        val usedAmount = conn.rawQuery(
-            "select * from " + TABLE_NAME + " where " + KEY_ARTIST + " =? and " + KEY_USED + " = 1",
-            arrayOf(artist)
-        ).count
+        if (cursor.moveToFirst()) {
+            names.add(cursor.getString(cursor.getColumnIndex(KEY_NAME)))
+            while (cursor.moveToNext()) {
+                names.add(cursor.getString(cursor.getColumnIndex(KEY_NAME)))
+            }
+        }
+        cursor.close()
 
-        return "$usedAmount / $totalAmount"
+        return ArrayList(names)
+    }
+
+    fun search(
+        artistOrAlbum: String?,
+        used: Boolean,
+        vinyl: Boolean,
+        onlyWeekend: Boolean
+    ): ArrayList<String> {
+        val cursor = conn.rawQuery(
+            "select * from $TABLE_NAME where ($KEY_NAME LIKE ? OR $KEY_ARTIST LIKE ?) AND ($KEY_USED = ? AND VINYL = ? AND ONLY_WEEKEND = ?)",
+            arrayOf(
+                "$artistOrAlbum%",
+                "$artistOrAlbum%",
+                if (used) "1" else "0",
+                if (vinyl) "1" else "0",
+                if (onlyWeekend) "1" else "0"
+            )
+        )
+        val names = HashSet<String>()
+
+        if (cursor.moveToFirst()) {
+            names.add(cursor.getString(cursor.getColumnIndex(KEY_NAME)))
+            while (cursor.moveToNext()) {
+                names.add(cursor.getString(cursor.getColumnIndex(KEY_NAME)))
+            }
+        }
+        cursor.close()
+
+        return ArrayList(names)
     }
 
     fun getAllAlbumsByArtist(artist: String): List<Photo> {
@@ -790,7 +841,7 @@ class DbHandler(context: Context) :
         private const val KEY_STATS_LAST_PLAYED_NAME = "last_played_name"
         private const val KEY_STATS_FIRST_PLAYED_NAME = "first_played_name"
         private const val TABLE_STATS_TABLE_NAME = "stats"
-
+        private const val TABLE_HISTORY_TABLE_NAME = "album_history"
         //    Artist
         private const val TABLE_ARTISTS_DATA = "artist_stats"
         private const val KEY_TOTAL_ALBUMS = "total"

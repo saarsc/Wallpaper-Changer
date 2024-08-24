@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/backgroundDark">
+
+    <CheckBox
+        android:id="@+id/usedCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Used"
+        android:textColor="@color/textColorPrimaryDark" />
+
+    <CheckBox
+        android:id="@+id/vinylCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Vinyl"
+        android:textColor="@color/textColorPrimaryDark" />
+
+    <CheckBox
+        android:id="@+id/onlyWeekendCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Only Weekend"
+        android:textColor="@color/textColorPrimaryDark" />
+
+    <Button
+        android:id="@+id/applyFiltersButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Apply Filters" />
+</LinearLayout>

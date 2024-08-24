@@ -45,6 +45,18 @@
             app:layout_constraintStart_toEndOf="@+id/btnResetDB"
             app:layout_constraintTop_toTopOf="@+id/btnResetDB" />
 
+        <Button
+            android:id="@+id/btnRestoreAll"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="32dp"
+            android:layout_marginTop="64dp"
+            android:text="Restore All"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintStart_toEndOf="@+id/btnResetDB"
+            app:layout_constraintTop_toTopOf="@+id/btnResetDB" />
+
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/imageFrame"
             android:layout_width="407dp"

@@ -6,7 +6,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import com.saar.wallpaperchanger.util.changeWallpaper
+import com.saar.wallpaperchanger.utils.imageUtils.changeWallpaper
 
 class WallpaperChangeWorker(private val context: Context, workerParams: WorkerParameters) : Worker(
     context, workerParams

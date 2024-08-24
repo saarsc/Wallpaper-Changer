@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.shape.CornerFamily
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.shape.ShapeAppearanceModel
+import com.saar.wallpaperchanger.utils.jobUtils.scheduleJob
 
 /**
  * A simple [Fragment] subclass.
@@ -75,7 +76,7 @@ class ServicesFragment : Fragment() {
         ViewCompat.setBackground(status, shapeDrawable)
 
         startService.setOnClickListener { v: View? ->
-            util.scheduleJob(view.context)
+            scheduleJob(view.context)
             //            util.scheduleJobWorker(view.getContext());
             status.text = "The job is active"
             shapeDrawable.fillColor = ColorStateList.valueOf(Color.parseColor("#34B234"))

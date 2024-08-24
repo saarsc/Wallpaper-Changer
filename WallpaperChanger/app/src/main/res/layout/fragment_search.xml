@@ -8,37 +8,93 @@
 
     <!-- TODO: Update blank fragment layout -->
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+<!--    <androidx.constraintlayout.widget.ConstraintLayout-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent">-->
+
+<!--        <com.google.android.material.button.MaterialButton-->
+
+<!--            android:id="@+id/searchButton"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:drawableStart="@drawable/baseline_search_white_24"-->
+<!--            android:text="Search"-->
+<!--            android:textAllCaps="false"-->
+<!--            app:layout_constraintBottom_toBottomOf="parent"-->
+<!--            app:layout_constraintEnd_toEndOf="@+id/searchBox"-->
+<!--            app:layout_constraintHorizontal_bias="0.496"-->
+<!--            app:layout_constraintStart_toStartOf="@+id/searchBox"-->
+<!--            app:layout_constraintTop_toBottomOf="@+id/searchBox"-->
+<!--            app:layout_constraintVertical_bias="0.121" />-->
+
+<!--        <com.google.android.material.imageview.ShapeableImageView-->
+<!--            android:id="@+id/imageFrame"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            app:layout_constraintBottom_toBottomOf="parent"-->
+<!--            app:layout_constraintEnd_toEndOf="parent"-->
+<!--            app:layout_constraintHorizontal_bias="0.0"-->
+<!--            app:layout_constraintStart_toStartOf="parent"-->
+<!--            app:layout_constraintTop_toTopOf="@+id/searchResult"-->
+<!--            app:layout_constraintVertical_bias="0.42"-->
+<!--            tools:src="null" />-->
+
+
+
+<!--        <com.google.android.material.textview.MaterialTextView-->
+<!--            android:id="@+id/searchResult"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:textAllCaps="false"-->
+<!--            android:textColor="#FFF"-->
+<!--            app:layout_constraintBottom_toBottomOf="parent"-->
+<!--            app:layout_constraintEnd_toEndOf="@+id/searchButton"-->
+<!--            app:layout_constraintStart_toStartOf="@+id/searchButton"-->
+<!--            app:layout_constraintTop_toBottomOf="@+id/searchButton"-->
+<!--            app:layout_constraintVertical_bias="0.048" />-->
+
+<!--        <com.google.android.material.switchmaterial.SwitchMaterial-->
+<!--            android:id="@+id/searchBySwitch"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:showText="false"-->
+<!--            android:splitTrack="false"-->
+<!--            android:text="@string/search_by_artist"-->
+<!--            app:layout_constraintBottom_toTopOf="@+id/searchButton"-->
+<!--            app:layout_constraintEnd_toEndOf="@+id/searchButton"-->
+<!--            app:layout_constraintStart_toStartOf="@+id/searchButton"-->
+<!--            app:layout_constraintTop_toBottomOf="@+id/searchBox" />-->
+
+<!--        <CheckBox-->
+<!--            android:id="@+id/cbIsVinyl"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginTop="48dp"-->
+<!--            android:text="Vinyl"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:visibility="gone"-->
+<!--            app:layout_constraintStart_toStartOf="@+id/searchResult"-->
+<!--            app:layout_constraintTop_toTopOf="@+id/searchResult" />-->
+
+<!--        <CheckBox-->
+<!--            android:id="@+id/cbWeekend"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="Weekend"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:visibility="gone"-->
+<!--            app:layout_constraintEnd_toEndOf="@+id/cbIsVinyl"-->
+<!--            app:layout_constraintHorizontal_bias="0.0"-->
+<!--            app:layout_constraintStart_toStartOf="@+id/cbIsVinyl"-->
+<!--            app:layout_constraintTop_toBottomOf="@+id/cbIsVinyl" />-->
+
+<!--    </androidx.constraintlayout.widget.ConstraintLayout>-->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <com.google.android.material.button.MaterialButton
-
-            android:id="@+id/searchButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:drawableStart="@drawable/baseline_search_white_24"
-            android:text="Search"
-            android:textAllCaps="false"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="@+id/searchBox"
-            app:layout_constraintHorizontal_bias="0.496"
-            app:layout_constraintStart_toStartOf="@+id/searchBox"
-            app:layout_constraintTop_toBottomOf="@+id/searchBox"
-            app:layout_constraintVertical_bias="0.121" />
-
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/imageFrame"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/searchResult"
-            app:layout_constraintVertical_bias="0.42"
-            tools:src="null" />
-
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@color/backgroundDark"
+    >
         <com.google.android.material.textfield.MaterialAutoCompleteTextView
             android:id="@+id/searchBox"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -46,59 +102,24 @@
             android:layout_height="24dp"
             android:background="@android:color/white"
             android:hint="Search"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.108" />
-
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/searchResult"
+        />
+<!--        <Spinner-->
+<!--            android:id="@+id/artistFilterSpinner"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:backgroundTint="@color/spinnerBackgroundDark"-->
+<!--            android:popupBackground="@color/spinnerPopupBackgroundDark"-->
+<!--            android:spinnerMode="dropdown" />-->
+        <Button
+            android:id="@+id/filterButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAllCaps="false"
-            android:textColor="#FFF"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="@+id/searchButton"
-            app:layout_constraintStart_toStartOf="@+id/searchButton"
-            app:layout_constraintTop_toBottomOf="@+id/searchButton"
-            app:layout_constraintVertical_bias="0.048" />
-
-        <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/searchBySwitch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:showText="false"
-            android:splitTrack="false"
-            android:text="@string/search_by_artist"
-            app:layout_constraintBottom_toTopOf="@+id/searchButton"
-            app:layout_constraintEnd_toEndOf="@+id/searchButton"
-            app:layout_constraintStart_toStartOf="@+id/searchButton"
-            app:layout_constraintTop_toBottomOf="@+id/searchBox" />
-
-        <CheckBox
-            android:id="@+id/cbIsVinyl"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="48dp"
-            android:text="Vinyl"
-            android:textColor="@android:color/white"
-            android:visibility="gone"
-            app:layout_constraintStart_toStartOf="@+id/searchResult"
-            app:layout_constraintTop_toTopOf="@+id/searchResult" />
-
-        <CheckBox
-            android:id="@+id/cbWeekend"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Weekend"
-            android:textColor="@android:color/white"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="@+id/cbIsVinyl"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintStart_toStartOf="@+id/cbIsVinyl"
-            app:layout_constraintTop_toBottomOf="@+id/cbIsVinyl" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
+            android:text="Filters"
+            android:layout_margin="16dp" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/namesRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/backgroundDark" />
+    </LinearLayout>
 </FrameLayout>
